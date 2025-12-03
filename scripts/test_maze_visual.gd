@@ -2,13 +2,13 @@
 # Test script to verify maze has closed boundaries
 # Run with: godot --headless --path . --script scripts/test_maze_visual.gd
 
-extends Node
+extends SceneTree
 
 var error_count = 0
 
 const MAZE_SCENE_PATH = "res://maze.tscn"
 
-func _ready() -> void:
+func _initialize() -> void:
 	run_tests()
 
 func run_tests() -> void:
@@ -31,11 +31,11 @@ func run_tests() -> void:
 		finish_test()
 		return
 	
-	add_child(maze_instance)
+	get_root().add_child(maze_instance)
 	
 	# Wait for maze generation
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await process_frame
+	await process_frame
 	
 	# Find maze node
 	var maze_node = maze_instance.get_node_or_null("Maze")
@@ -61,7 +61,7 @@ func run_tests() -> void:
 	
 	# Wait for generation to complete
 	for i in range(20):
-		await get_tree().process_frame
+		await process_frame
 	
 	# Check walls container
 	var walls_container = maze_node.get_node_or_null("Walls")
@@ -197,9 +197,9 @@ func finish_test() -> void:
 	if error_count == 0:
 		print("✅ Maze boundary test PASSED - All edges are closed!")
 		print("PASSED")
-		get_tree().quit(0)
+		quit(0)
 	else:
 		print("❌ Maze boundary test FAILED - Some edges are not closed")
 		print("FAILED")
-		get_tree().quit(1)
+		quit(1)
 
