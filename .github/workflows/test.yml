@@ -103,8 +103,8 @@ jobs:
           echo "=== Final Decision ==="
           # Check test_report.txt first (from test_all.gd), then validation_output.txt
           # Only check other files if they exist and have content
-          local has_passed=false
-          local has_failed=false
+          has_passed=false
+          has_failed=false
           
           # Check test_report.txt (main test output)
           if [ -f test_report.txt ]; then
