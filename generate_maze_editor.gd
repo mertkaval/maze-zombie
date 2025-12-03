@@ -67,7 +67,16 @@ func _run() -> void:
 	print("[EditorScript] Calling generate_maze()...")
 	
 	# Call generate_maze() on the node
+	# In editor mode, _clear_existing_maze() doesn't await, so this should complete synchronously
 	maze_node.generate_maze()
+	
+	# Force process to ensure all nodes are created
+	# In editor, we need to manually trigger updates
+	EditorInterface.get_editor_viewport().queue_redraw()
+	
+	# Small delay to ensure nodes are created
+	await Engine.get_main_loop().process_frame
+	await Engine.get_main_loop().process_frame
 	
 	print("[EditorScript] Maze generation complete!")
 	

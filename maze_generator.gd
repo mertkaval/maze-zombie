@@ -168,7 +168,12 @@ func generate_maze() -> void:
 	var total_start = Time.get_ticks_msec()
 	
 	# Clear any existing maze
-	await _clear_existing_maze()
+	# In editor mode, this is synchronous (no await)
+	# In runtime mode, this awaits for cleanup
+	if Engine.is_editor_hint():
+		_clear_existing_maze()
+	else:
+		await _clear_existing_maze()
 	
 	# Step 1: Generate maze data using algorithm
 	print("\n[MazeGenerator] Step 1: Generating maze layout...")
@@ -196,6 +201,11 @@ func generate_maze() -> void:
 	
 	var total_elapsed = Time.get_ticks_msec() - total_start
 	print("\n[MazeGenerator] Total generation time: %d ms" % total_elapsed)
+	
+	# In editor mode, force update to ensure nodes are visible
+	if Engine.is_editor_hint():
+		# Force the scene to update
+		update_gizmos()
 
 
 ## Helper function to create default config
