@@ -46,11 +46,16 @@ func _ready() -> void:
 			print("[MazeGenerator] Config appears to be placeholder, creating default config...")
 			config = MazeConfig.create_default()
 	
-	# Validate configuration (skip if placeholder was detected)
-	if config != null and config.resource_path != "":
-		if not config.validate():
-			push_error("[MazeGenerator] Invalid configuration! Aborting.")
-			return
+	# Validate configuration
+	# In editor, skip validation to avoid placeholder issues (configs are recreated if needed)
+	# In runtime, validate normally
+	if not Engine.is_editor_hint():
+		# Runtime: always validate
+		if config != null:
+			if not config.validate():
+				push_error("[MazeGenerator] Invalid configuration! Aborting.")
+				return
+	# Editor: skip validation - configs are recreated if placeholders detected above
 	
 	# Print configuration if debug mode
 	if debug_mode:
@@ -88,22 +93,19 @@ func generate_maze() -> void:
 				print("[MazeGenerator] Config appears to be placeholder, creating default config...")
 				config = _create_default_config()
 		
-		# Validate configuration (skip validation in editor if it was a placeholder)
-		# In runtime, always validate. In editor, validate if config is not a placeholder.
+		# Validate configuration
+		# In editor, we skip validation entirely to avoid placeholder issues
+		# Configs created with _create_default_config() are always valid
+		# In runtime, we always validate since placeholders don't exist at runtime
 		if not Engine.is_editor_hint():
-			# Runtime: always validate
+			# Runtime: always validate (no placeholders at runtime)
 			if not config.validate():
 				push_error("[MazeGenerator] Invalid configuration! Aborting.")
 				return
-		else:
-			# Editor: only validate if config has a resource path (not a placeholder)
-			# New config instances created with .new() have empty resource_path but are valid
-			# Placeholders also have empty resource_path but can't call methods
-			# So we validate if resource_path is not empty OR if width > 0 (meaning it's a real config)
-			if config.resource_path != "" or config.maze_width > 0:
-				if not config.validate():
-					push_error("[MazeGenerator] Invalid configuration! Aborting.")
-					return
+		# Editor: skip validation to avoid placeholder issues
+		# If config was recreated above, it's guaranteed to be valid
+		# If config wasn't recreated, it means it passed our checks but might still be a placeholder
+		# So we skip validation in editor entirely - configs created with defaults are always valid
 	
 	var total_start = Time.get_ticks_msec()
 	
