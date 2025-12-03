@@ -74,33 +74,33 @@ func generate_maze() -> void:
 	if config == null:
 		print("[MazeGenerator] Config not initialized, creating default config...")
 		config = _create_default_config()
+	else:
+		# Check if config is a placeholder or uninitialized
+		if Engine.is_editor_hint():
+			# In editor, always recreate to avoid placeholder issues
+			# Even accessing properties on placeholders can fail
+			print("[MazeGenerator] Editor mode - recreating config to avoid placeholder issues...")
+			config = _create_default_config()
 		else:
-			# Check if config is a placeholder or uninitialized
-			if Engine.is_editor_hint():
-				# In editor, always recreate to avoid placeholder issues
-				# Even accessing properties on placeholders can fail
-				print("[MazeGenerator] Editor mode - recreating config to avoid placeholder issues...")
+			# In runtime, check if config is uninitialized (width == 0)
+			var config_width = config.maze_width
+			if config_width == 0:
+				print("[MazeGenerator] Config appears uninitialized (width == 0), creating default config...")
 				config = _create_default_config()
-			else:
-				# In runtime, check if config is uninitialized (width == 0)
-				var config_width = config.maze_width
-				if config_width == 0:
-					print("[MazeGenerator] Config appears uninitialized (width == 0), creating default config...")
-					config = _create_default_config()
-		
-		# Validate configuration
-		# In editor, we skip validation entirely to avoid placeholder issues
-		# Configs created with _create_default_config() are always valid
-		# In runtime, we always validate since placeholders don't exist at runtime
-		if not Engine.is_editor_hint():
-			# Runtime: always validate (no placeholders at runtime)
-			if not config.validate():
-				push_error("[MazeGenerator] Invalid configuration! Aborting.")
-				return
-		# Editor: skip validation to avoid placeholder issues
-		# If config was recreated above, it's guaranteed to be valid
-		# If config wasn't recreated, it means it passed our checks but might still be a placeholder
-		# So we skip validation in editor entirely - configs created with defaults are always valid
+	
+	# Validate configuration
+	# In editor, we skip validation entirely to avoid placeholder issues
+	# Configs created with _create_default_config() are always valid
+	# In runtime, we always validate since placeholders don't exist at runtime
+	if not Engine.is_editor_hint():
+		# Runtime: always validate (no placeholders at runtime)
+		if not config.validate():
+			push_error("[MazeGenerator] Invalid configuration! Aborting.")
+			return
+	# Editor: skip validation to avoid placeholder issues
+	# If config was recreated above, it's guaranteed to be valid
+	# If config wasn't recreated, it means it passed our checks but might still be a placeholder
+	# So we skip validation in editor entirely - configs created with defaults are always valid
 	
 	var total_start = Time.get_ticks_msec()
 	
