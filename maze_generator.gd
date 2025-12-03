@@ -35,22 +35,30 @@ func _ready() -> void:
 	if config == null:
 		print("[MazeGenerator] No config provided, using defaults")
 		config = MazeConfig.create_default()
+	else:
+		# Check if config is a placeholder resource (common in editor)
+		# Placeholder resources can't call methods, so check by accessing a property
+		if Engine.is_editor_hint():
+			# In editor, check if config is placeholder by trying to read a property
+			# Try to access a property - if it fails or returns 0, it might be a placeholder
+			var test_width = config.maze_width
+			if test_width == 0:
+				# Likely a placeholder or uninitialized, recreate config
+				print("[MazeGenerator] Config appears to be placeholder or uninitialized, creating default config...")
+				config = MazeConfig.create_default()
+			elif config.resource_path == "":
+				# No resource path means it's a new instance, which is fine
+				pass
 	
-	# Check if config is a placeholder resource (common in editor)
-	# Placeholder resources can't call methods, so check by accessing a property
-	if Engine.is_editor_hint():
-		# In editor, check if config is placeholder by trying to read a property
-		var test_width = config.maze_width
-		if test_width == 0 or config.resource_path == "":
-			# Likely a placeholder, recreate config
-			print("[MazeGenerator] Config appears to be placeholder, creating default config...")
-			config = MazeConfig.create_default()
-	
-	# Validate configuration (skip if placeholder was detected)
-	if config != null and config.resource_path != "":
-		if not config.validate():
-			push_error("[MazeGenerator] Invalid configuration! Aborting.")
-			return
+	# Validate configuration (only if config is not null and not a placeholder)
+	# We skip validation for placeholders since they can't call methods
+	if config != null:
+		# Only validate if we're sure it's not a placeholder
+		# Placeholders typically have resource_path == "" or return 0 for properties
+		if config.maze_width > 0:
+			if not config.validate():
+				push_error("[MazeGenerator] Invalid configuration! Aborting.")
+				return
 	
 	# Print configuration if debug mode
 	if debug_mode:
@@ -73,38 +81,22 @@ func generate_maze() -> void:
 	else:
 		# Check if config is a placeholder resource
 		# Placeholder resources can't call methods, so we check by trying to read a property
-		# If it fails or returns default values, it might be a placeholder
 		var config_width = config.maze_width
 		
 		# If config has default/zero values, it might be uninitialized or placeholder
-		# In editor context, if we can't safely validate, just recreate config
 		if Engine.is_editor_hint():
 			# In editor, if config seems like it might be placeholder, recreate it
 			# We can't call validate() on placeholders, so check property access instead
 			if config_width == 0:
-				print("[MazeGenerator] Config appears uninitialized, creating default config...")
+				print("[MazeGenerator] Config appears uninitialized or placeholder, creating default config...")
 				config = _create_default_config()
-			# Skip validation in editor to avoid placeholder issues
-		else:
-			# In runtime, validate normally
+		
+		# Validate configuration (only if not a placeholder)
+		# Skip validation for placeholders since they can't call methods
+		if config.maze_width > 0:
 			if not config.validate():
 				push_error("[MazeGenerator] Invalid configuration! Aborting.")
 				return
-
-
-## Helper function to create default config
-func _create_default_config() -> MazeConfig:
-	var new_config = MazeConfig.new()
-	new_config.maze_width = 40
-	new_config.maze_height = 40
-	new_config.tile_size = 4.0
-	new_config.wall_height = 3.0
-	new_config.wall_thickness = 0.2
-	new_config.floor_color = Color(0.6, 0.8, 0.5)
-	new_config.wall_color = Color(0.65, 0.65, 0.65)
-	new_config.entry_position = Vector2i(0, 0)
-	new_config.exit_position = Vector2i(39, 39)
-	return new_config
 	
 	var total_start = Time.get_ticks_msec()
 	
@@ -137,6 +129,25 @@ func _create_default_config() -> MazeConfig:
 	
 	var total_elapsed = Time.get_ticks_msec() - total_start
 	print("\n[MazeGenerator] Total generation time: %d ms" % total_elapsed)
+
+
+## Helper function to create default config
+func _create_default_config() -> MazeConfig:
+	var new_config = MazeConfig.new()
+	new_config.maze_width = 40
+	new_config.maze_height = 40
+	new_config.tile_size = 4.0
+	new_config.wall_height = 3.0
+	new_config.wall_thickness = 0.2
+	new_config.floor_color = Color(0.6, 0.8, 0.5)
+	new_config.wall_color = Color(0.65, 0.65, 0.65)
+	new_config.entry_position = Vector2i(0, 0)
+	new_config.exit_position = Vector2i(39, 39)
+	return new_config
+
+
+## Clears any existing maze geometry
+func _clear_existing_maze() -> void:
 
 
 ## Clears any existing maze geometry
