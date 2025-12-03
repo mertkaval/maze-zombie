@@ -31,6 +31,7 @@ func _ready() -> void:
 
 func run_all_tests_async() -> void:
 	# Run all tests sequentially, awaiting each one
+	await run_test_script("Maze Generation Verification", "res://scripts/verify_maze_generation.gd")
 	await run_test_script("Scene Validation", "res://scripts/test_scene_validation.gd")
 	await run_test_script("Maze Generation", "res://scripts/test_maze_generation.gd")
 	await run_test_script("Runtime", "res://scripts/test_runtime.gd")

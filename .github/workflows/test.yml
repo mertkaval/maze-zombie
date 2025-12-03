@@ -29,6 +29,12 @@ jobs:
       - name: Create scripts directory
         run: mkdir -p scripts
       
+      - name: Verify Maze Generation
+        run: |
+          echo "Verifying maze generation..."
+          ./godot --headless --path . --script scripts/verify_maze_generation.gd 2>&1 | tee maze_generation_verify.txt || true
+        continue-on-error: true
+      
       - name: Run All Tests
         run: |
           echo "Running all tests..."
