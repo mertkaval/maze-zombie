@@ -51,12 +51,37 @@ func _run() -> void:
 		return
 	
 	print("[EditorScript] Found Maze node with generate_maze() method")
+	
+	# Ensure config is initialized (fix placeholder issue)
+	if maze_node.config == null:
+		print("[EditorScript] Config is null, creating default config...")
+		maze_node.config = MazeConfig.create_default()
+	elif maze_node.config.resource_path == "" or maze_node.config.maze_width == 0:
+		print("[EditorScript] Config appears to be placeholder, creating default config...")
+		maze_node.config = MazeConfig.create_default()
+	
+	print("[EditorScript] Config initialized: %d x %d" % [maze_node.config.maze_width, maze_node.config.maze_height])
 	print("[EditorScript] Calling generate_maze()...")
 	
 	# Call generate_maze() on the node
 	maze_node.generate_maze()
 	
 	print("[EditorScript] Maze generation complete!")
+	
+	# Verify generation worked
+	var floor_tiles = maze_node.get_node_or_null("FloorTiles")
+	var walls = maze_node.get_node_or_null("Walls")
+	
+	if floor_tiles == null:
+		push_error("[EditorScript] FloorTiles container not found after generation!")
+	else:
+		print("[EditorScript] Floor tiles created: %d" % floor_tiles.get_child_count())
+	
+	if walls == null:
+		push_error("[EditorScript] Walls container not found after generation!")
+	else:
+		print("[EditorScript] Walls created: %d" % walls.get_child_count())
+	
 	print("========================================")
 	
 	# Pack the scene with the generated maze

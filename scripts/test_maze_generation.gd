@@ -12,7 +12,7 @@ const EXPECTED_FLOOR_COUNT = 40 * 40  # 40x40 tiles
 
 func _ready() -> void:
 	run_tests()
-	get_tree().quit(error_count)
+	# Don't quit here - let the test runner handle it
 
 func run_tests() -> void:
 	print("========================================")
@@ -80,6 +80,10 @@ func test_generate_maze() -> void:
 		record_error("Failed to instantiate maze scene")
 		return
 	
+	# Add to scene tree so generate_maze() can work properly
+	var root = get_tree().get_root()
+	root.add_child(instance)
+	
 	# Find Maze node
 	var maze_node = instance
 	if maze_node.name != "Maze":
@@ -100,6 +104,10 @@ func test_generate_maze() -> void:
 	# Call generate_maze()
 	print("  Calling generate_maze()...")
 	maze_node.generate_maze()
+	
+	# Wait a frame for generation to complete
+	await get_tree().process_frame
+	await get_tree().process_frame
 	
 	print("  ✓ Maze generation completed")
 	
@@ -147,6 +155,10 @@ func test_maze_structure() -> void:
 		record_error("Failed to instantiate maze scene")
 		return
 	
+	# Add to scene tree
+	var root = get_tree().get_root()
+	root.add_child(instance)
+	
 	var maze_node = instance
 	if maze_node.name != "Maze":
 		maze_node = instance.get_node_or_null("Maze")
@@ -158,6 +170,8 @@ func test_maze_structure() -> void:
 	
 	# Generate maze
 	maze_node.generate_maze()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	
 	# Check floor tiles have proper structure
 	var floor_tiles = maze_node.get_node_or_null("FloorTiles")
@@ -221,11 +235,16 @@ func test_different_seeds() -> void:
 		record_error("Cannot test seeds - scene failed to load")
 		return
 	
+	var root = get_tree().get_root()
+	
 	# Test with seed 1
 	var instance1 = scene.instantiate()
+	root.add_child(instance1)
 	var maze_node1 = instance1 if instance1.name == "Maze" else instance1.get_node_or_null("Maze")
 	if maze_node1 != null and maze_node1.has_method("regenerate_with_seed"):
 		maze_node1.regenerate_with_seed(1)
+		await get_tree().process_frame
+		await get_tree().process_frame
 		var walls1 = maze_node1.get_node_or_null("Walls")
 		var wall_count1 = walls1.get_child_count() if walls1 != null else 0
 		print("  ✓ Generated with seed 1: %d walls" % wall_count1)
@@ -233,9 +252,12 @@ func test_different_seeds() -> void:
 	
 	# Test with seed 42
 	var instance2 = scene.instantiate()
+	root.add_child(instance2)
 	var maze_node2 = instance2 if instance2.name == "Maze" else instance2.get_node_or_null("Maze")
 	if maze_node2 != null and maze_node2.has_method("regenerate_with_seed"):
 		maze_node2.regenerate_with_seed(42)
+		await get_tree().process_frame
+		await get_tree().process_frame
 		var walls2 = maze_node2.get_node_or_null("Walls")
 		var wall_count2 = walls2.get_child_count() if walls2 != null else 0
 		print("  ✓ Generated with seed 42: %d walls" % wall_count2)

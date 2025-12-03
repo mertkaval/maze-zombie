@@ -13,7 +13,7 @@ const PLAYER_SCENE_PATH = "res://player.tscn"
 
 func _ready() -> void:
 	run_tests()
-	get_tree().quit(error_count)
+	# Don't quit here - let the test runner handle it
 
 func run_tests() -> void:
 	print("========================================")
@@ -213,7 +213,11 @@ func test_node_validity() -> void:
 
 
 func check_node_validity(node: Node, path: String) -> void:
-	var current_path = path + "/" + node.name if path != "" else node.name
+	var current_path: String
+	if path != "":
+		current_path = path + "/" + node.name
+	else:
+		current_path = node.name
 	
 	# Check if node is valid
 	if not is_instance_valid(node):

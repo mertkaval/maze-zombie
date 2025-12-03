@@ -10,9 +10,7 @@ var warning_count = 0
 
 func _ready() -> void:
 	run_tests()
-	get_tree().quit(error_count)
-
-func run_tests() -> void:
+	# Don't quit here - let the test runner handle it
 
 # Scene paths to test
 const SCENES_TO_TEST = {
@@ -107,14 +105,19 @@ func test_scene(scene_path: String, requirements: Dictionary) -> void:
 	# Check required nodes
 	if requirements.has("required_nodes"):
 		for node_name in requirements["required_nodes"]:
-			var node = instance.get_node_or_null(node_name)
-			if node == null:
-				# Try finding by path
-				node = instance.find_child(node_name, true, false)
+			var node = null
+			# First check if it's the root node itself
+			if instance.name == node_name:
+				node = instance
+			else:
+				# Check direct children
+				node = instance.get_node_or_null(node_name)
 				if node == null:
-					record_error(scene_path, "Required node not found: %s" % node_name)
-				else:
-					print("  ✓ Found node: %s" % node_name)
+					# Try finding by name recursively
+					node = instance.find_child(node_name, true, false)
+			
+			if node == null:
+				record_error(scene_path, "Required node not found: %s" % node_name)
 			else:
 				print("  ✓ Found node: %s" % node_name)
 	

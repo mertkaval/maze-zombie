@@ -36,10 +36,21 @@ func _ready() -> void:
 		print("[MazeGenerator] No config provided, using defaults")
 		config = MazeConfig.create_default()
 	
-	# Validate configuration
-	if not config.validate():
-		push_error("[MazeGenerator] Invalid configuration! Aborting.")
-		return
+	# Check if config is a placeholder resource (common in editor)
+	# Placeholder resources can't call methods, so check by accessing a property
+	if Engine.is_editor_hint():
+		# In editor, check if config is placeholder by trying to read a property
+		var test_width = config.maze_width
+		if test_width == 0 or config.resource_path == "":
+			# Likely a placeholder, recreate config
+			print("[MazeGenerator] Config appears to be placeholder, creating default config...")
+			config = MazeConfig.create_default()
+	
+	# Validate configuration (skip if placeholder was detected)
+	if config != null and config.resource_path != "":
+		if not config.validate():
+			push_error("[MazeGenerator] Invalid configuration! Aborting.")
+			return
 	
 	# Print configuration if debug mode
 	if debug_mode:

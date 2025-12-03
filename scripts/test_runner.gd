@@ -53,16 +53,22 @@ func run_test_script(test_name: String, script_path: String) -> void:
 	# Set the script on the node
 	test_node.set_script(script)
 	
-	# Call run_tests if it exists
-	if test_node.has_method("run_tests"):
-		test_node.run_tests()
-		var passed = not test_node.has_method("get_error_count") or test_node.get_error_count() == 0
-		test_results[test_name] = "PASSED" if passed else "FAILED"
-		if not passed:
-			all_passed = false
+	# Wait for _ready to execute (which calls run_tests)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Check error count
+	var errors = 0
+	if test_node.has("error_count"):
+		errors = test_node.error_count
+	
+	var passed = errors == 0
+	test_results[test_name] = "PASSED" if passed else "FAILED"
+	if not passed:
+		all_passed = false
+		print("  ❌ Test failed with %d errors" % errors)
 	else:
-		print("⚠️  Script does not have run_tests() method")
-		test_results[test_name] = "NO_METHOD"
+		print("  ✅ Test passed")
 	
 	# Clean up
 	test_node.queue_free()

@@ -29,34 +29,16 @@ jobs:
       - name: Create scripts directory
         run: mkdir -p scripts
       
-      - name: Run Scene Validation Tests
+      - name: Run All Tests
         run: |
-          echo "Running scene validation tests..."
-          ./godot --headless --path . --script scripts/test_scene_validation.gd 2>&1 | tee validation_output.txt || true
+          echo "Running all tests..."
+          ./godot --headless --path . --script scripts/test_all.gd 2>&1 | tee test_report.txt || true
         continue-on-error: true
       
-      - name: Run Maze Generation Tests
+      - name: Run Individual Tests (for detailed logs)
         run: |
-          echo "Running maze generation tests..."
-          ./godot --headless --path . --script scripts/test_maze_generation.gd 2>&1 | tee generation_output.txt || true
-        continue-on-error: true
-      
-      - name: Run Runtime Tests
-        run: |
-          echo "Running runtime tests..."
-          ./godot --headless --path . --script scripts/test_runtime.gd 2>&1 | tee runtime_output.txt || true
-        continue-on-error: true
-      
-      - name: Analyze Scenes
-        run: |
-          echo "Analyzing scenes..."
-          ./godot --headless --path . --script scripts/analyze_scenes.gd 2>&1 | tee analysis_output.txt || true
-        continue-on-error: true
-      
-      - name: Run All Tests (via test runner scene)
-        run: |
-          echo "Running all tests via test runner..."
-          ./godot --headless --path . test_runner.tscn 2>&1 | tee test_report.txt || true
+          echo "Running individual tests for detailed output..."
+          ./godot --headless --path . test_runner.tscn 2>&1 | tee validation_output.txt || true
         continue-on-error: true
       
       - name: Check Test Results

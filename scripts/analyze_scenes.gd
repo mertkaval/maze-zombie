@@ -18,7 +18,7 @@ const SCENES_TO_ANALYZE = [
 
 func _ready() -> void:
 	run_tests()
-	get_tree().quit(error_count)
+	# Don't quit here - let the test runner handle it
 
 func run_tests() -> void:
 	print("========================================")
