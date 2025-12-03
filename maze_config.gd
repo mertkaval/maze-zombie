@@ -7,13 +7,13 @@ extends Resource
 
 ## Maze Dimensions
 @export_group("Maze Dimensions")
-@export var maze_width: int = 40  ## Number of tiles in X direction
-@export var maze_height: int = 40  ## Number of tiles in Z direction
+@export var maze_width: int = 10  ## Number of tiles in X direction
+@export var maze_height: int = 10  ## Number of tiles in Z direction
 
 ## Tile Properties
 @export_group("Tile Properties")
 @export var tile_size: float = 4.0  ## Size of each floor tile in meters
-@export var wall_height: float = 3.0  ## Height of walls in meters
+@export var wall_height: float = 6.0  ## Height of walls in meters
 @export var wall_thickness: float = 0.2  ## Thickness of walls in meters
 
 ## Colors
@@ -67,8 +67,7 @@ func validate() -> bool:
 
 ## Creates a default configuration
 static func create_default() -> MazeConfig:
-	# Use self.new() or direct instantiation for headless compatibility
-	var config = load("res://maze_config.gd").new()
+	var config = MazeConfig.new()
 	# All defaults are already set via @export
 	return config
 

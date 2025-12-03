@@ -22,6 +22,9 @@ ambient_light_energy = 0.3
 
 [sub_resource type="Resource" id="Resource_1bvp3"]
 script = ExtResource("2_h2yge")
+maze_width = 40
+maze_height = 40
+wall_height = 3.0
 
 [node name="Main" type="Node3D"]
 
@@ -38,4 +41,4 @@ environment = SubResource("Environment_1")
 config = SubResource("Resource_1bvp3")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.8, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.31348395, 3.6945667)

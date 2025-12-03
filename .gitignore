@@ -1,3 +1,18 @@
 ﻿.godot/
 *.import
 export_presets.cfg
+
+# Test output files
+test_*.txt
+*_output.txt
+*_report.txt
+test_iteration_*.txt
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
