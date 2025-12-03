@@ -150,6 +150,7 @@ func _create_walls(cells: Array) -> void:
 			# West wall (at left edge of cell, blocks X- direction)
 			# This is a North-South oriented wall (runs along Z axis)
 			# Place for all cells - outer boundary will be closed
+			# For first column (x=0), this creates the west boundary
 			if cell["west"]:
 				var wall_pos = Vector3(x * tile_size, wall_y, cell_center_z)
 				_place_wall(walls_container, wall_pos, true, "Wall_W_%d_%d" % [x, y])
