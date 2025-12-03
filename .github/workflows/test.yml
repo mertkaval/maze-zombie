@@ -32,31 +32,31 @@ jobs:
       - name: Run Scene Validation Tests
         run: |
           echo "Running scene validation tests..."
-          ./godot --headless --path . -s scripts/test_scene_validation.gd 2>&1 | tee validation_output.txt || true
+          ./godot --headless --path . --script scripts/test_scene_validation.gd 2>&1 | tee validation_output.txt || true
         continue-on-error: true
       
       - name: Run Maze Generation Tests
         run: |
           echo "Running maze generation tests..."
-          ./godot --headless --path . -s scripts/test_maze_generation.gd 2>&1 | tee generation_output.txt || true
+          ./godot --headless --path . --script scripts/test_maze_generation.gd 2>&1 | tee generation_output.txt || true
         continue-on-error: true
       
       - name: Run Runtime Tests
         run: |
           echo "Running runtime tests..."
-          ./godot --headless --path . -s scripts/test_runtime.gd 2>&1 | tee runtime_output.txt || true
+          ./godot --headless --path . --script scripts/test_runtime.gd 2>&1 | tee runtime_output.txt || true
         continue-on-error: true
       
       - name: Analyze Scenes
         run: |
           echo "Analyzing scenes..."
-          ./godot --headless --path . -s scripts/analyze_scenes.gd 2>&1 | tee analysis_output.txt || true
+          ./godot --headless --path . --script scripts/analyze_scenes.gd 2>&1 | tee analysis_output.txt || true
         continue-on-error: true
       
       - name: Run All Tests (Master Runner)
         run: |
           echo "Running master test suite..."
-          ./godot --headless --path . -s scripts/run_all_tests.gd 2>&1 | tee test_report.txt || true
+          ./godot --headless --path . --script scripts/run_all_tests.gd 2>&1 | tee test_report.txt || true
         continue-on-error: true
       
       - name: Check Test Results

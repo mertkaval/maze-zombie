@@ -1,13 +1,9 @@
 # test_scene_validation.gd
 # Script to validate all scenes can load and have correct structure
-# Run from CI: godot --headless --path . -s scripts/test_scene_validation.gd
-# Or as EditorScript in editor: File > Run
+# Works in headless mode: godot --headless --path . --script scripts/test_scene_validation.gd
+# Also works as EditorScript in editor: File > Run
 
-@tool
-extends EditorScript
-
-func _run() -> void:
-	run_tests()
+extends SceneTree
 
 var test_results = []
 var error_count = 0
@@ -40,7 +36,7 @@ const SCENES_TO_TEST = {
 }
 
 
-func run_tests() -> void:
+func _initialize() -> void:
 	print("========================================")
 	print("  Scene Validation Tests")
 	print("========================================")
@@ -64,10 +60,11 @@ func run_tests() -> void:
 	if error_count == 0:
 		print("✅ All scene validation tests PASSED")
 		print("PASSED")
+		quit(0)
 	else:
 		print("❌ Scene validation tests FAILED")
 		print("FAILED")
-		push_error("Scene validation failed with %d errors" % error_count)
+		quit(1)
 
 
 func test_scene(scene_path: String, requirements: Dictionary) -> void:
@@ -174,7 +171,6 @@ func record_error(scene_path: String, message: String) -> void:
 	print("  ❌ %s" % error_msg)
 	test_results.append(error_msg)
 	error_count += 1
-	push_error(error_msg)
 
 
 func record_warning(scene_path: String, message: String) -> void:
@@ -182,4 +178,3 @@ func record_warning(scene_path: String, message: String) -> void:
 	print("  ⚠️  %s" % warning_msg)
 	test_results.append(warning_msg)
 	warning_count += 1
-

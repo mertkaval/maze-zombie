@@ -1,12 +1,10 @@
 # run_all_tests.gd
 # Master test runner - coordinates all tests and generates comprehensive report
-# Run from CI: godot --headless --path . -s scripts/run_all_tests.gd
-# Or as EditorScript in editor: File > Run
+# Works in headless mode: godot --headless --path . --script scripts/run_all_tests.gd
 
-@tool
-extends EditorScript
+extends SceneTree
 
-func _run() -> void:
+func _initialize() -> void:
 	print("========================================")
 	print("  Master Test Suite Runner")
 	print("========================================")
@@ -17,11 +15,8 @@ func _run() -> void:
 	print("  2. scripts/test_maze_generation.gd")
 	print("  3. scripts/test_runtime.gd")
 	print("  4. scripts/analyze_scenes.gd")
-	print("\nTo run tests locally:")
-	print("  - Open each test script in Script Editor")
-	print("  - Use File > Run to execute")
-	print("\nOr use the CI pipeline which runs all tests automatically.")
+	print("\nAll tests should be run individually by the CI pipeline.")
 	print("\n========================================")
 	print("✅ Master test runner ready")
 	print("PASSED")
-
+	quit(0)

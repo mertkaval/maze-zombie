@@ -1,10 +1,8 @@
 # analyze_scenes.gd
 # Script for deep analysis of scenes to find issues
-# Run from CI: godot --headless --path . -s scripts/analyze_scenes.gd
-# Or as EditorScript in editor: File > Run
+# Works in headless mode: godot --headless --path . --script scripts/analyze_scenes.gd
 
-@tool
-extends EditorScript
+extends SceneTree
 
 var issues = []
 var error_count = 0
@@ -19,7 +17,7 @@ const SCENES_TO_ANALYZE = [
 ]
 
 
-func _run() -> void:
+func _initialize() -> void:
 	print("========================================")
 	print("  Scene Analysis")
 	print("========================================")
@@ -43,12 +41,15 @@ func _run() -> void:
 	if error_count == 0 and warning_count == 0:
 		print("✅ No issues found - scenes are solid!")
 		print("PASSED")
+		quit(0)
 	else:
 		print("⚠️  Issues found - review below")
 		if error_count > 0:
 			print("FAILED")
+			quit(1)
 		else:
 			print("PASSED_WITH_WARNINGS")
+			quit(0)
 	
 	# Print all issues
 	if issues.size() > 0:
@@ -226,11 +227,9 @@ func record_error(scene_path: String, message: String) -> void:
 	var error_msg = "[ERROR] %s: %s" % [scene_path, message]
 	issues.append(error_msg)
 	error_count += 1
-	push_error(error_msg)
 
 
 func record_warning(scene_path: String, message: String) -> void:
 	var warning_msg = "[WARNING] %s: %s" % [scene_path, message]
 	issues.append(warning_msg)
 	warning_count += 1
-

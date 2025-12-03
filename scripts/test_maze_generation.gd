@@ -1,10 +1,8 @@
 # test_maze_generation.gd
 # Script to test maze generation works correctly
-# Run from CI: godot --headless --path . -s scripts/test_maze_generation.gd
-# Or as EditorScript in editor: File > Run
+# Works in headless mode: godot --headless --path . --script scripts/test_maze_generation.gd
 
-@tool
-extends EditorScript
+extends SceneTree
 
 var error_count = 0
 var test_count = 0
@@ -13,7 +11,7 @@ const MAZE_SCENE_PATH = "res://maze.tscn"
 const EXPECTED_FLOOR_COUNT = 40 * 40  # 40x40 tiles
 
 
-func _run() -> void:
+func _initialize() -> void:
 	print("========================================")
 	print("  Maze Generation Tests")
 	print("========================================")
@@ -43,10 +41,11 @@ func _run() -> void:
 	if error_count == 0:
 		print("✅ All maze generation tests PASSED")
 		print("PASSED")
+		quit(0)
 	else:
 		print("❌ Maze generation tests FAILED")
 		print("FAILED")
-		push_error("Maze generation tests failed with %d errors" % error_count)
+		quit(1)
 
 
 func test_load_maze_scene() -> void:
@@ -248,5 +247,3 @@ func record_error(message: String) -> void:
 	var error_msg = "[ERROR] %s" % message
 	print("  ❌ %s" % error_msg)
 	error_count += 1
-	push_error(error_msg)
-
