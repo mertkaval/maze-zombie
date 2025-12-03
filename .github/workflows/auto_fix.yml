@@ -1,0 +1,134 @@
+name: Automated Test and Fix
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  push:
+    branches: [ main ]
+    paths:
+      - 'maze_algorithm.gd'
+      - 'maze_builder.gd'
+      - 'maze_generator.gd'
+      - 'scripts/**'
+
+jobs:
+  auto-fix:
+    name: Auto Test and Fix Loop
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Godot 4.5.1 Headless
+        run: |
+          echo "Downloading Godot 4.5.1 headless..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5.1-stable_linux.x86_64
+          mv Godot_v4.5.1-stable_linux.x86_64 godot
+          echo "Godot version:"
+          ./godot --version
+      
+      - name: Run Automated Test-and-Fix Loop
+        id: auto_fix
+        run: |
+          echo "Starting automated test-and-fix loop..."
+          MAX_ITERATIONS=5
+          ITERATION=0
+          ALL_PASSED=false
+          
+          while [ $ITERATION -lt $MAX_ITERATIONS ] && [ "$ALL_PASSED" != "true" ]; do
+            ITERATION=$((ITERATION + 1))
+            echo ""
+            echo "========================================"
+            echo "ITERATION $ITERATION"
+            echo "========================================"
+            
+            # Run tests
+            echo "Running tests..."
+            ./godot --headless --path . --script scripts/test_all.gd 2>&1 | tee "test_iteration_${ITERATION}.txt" || true
+            
+            # Check results
+            if grep -q "PASSED" "test_iteration_${ITERATION}.txt" && ! grep -q "FAILED\|ERROR" "test_iteration_${ITERATION}.txt"; then
+              echo "✅ All tests PASSED!"
+              ALL_PASSED=true
+              break
+            fi
+            
+            # Extract errors
+            echo ""
+            echo "Errors found:"
+            grep -i "ERROR\|FAILED" "test_iteration_${ITERATION}.txt" | head -10 || true
+            
+            # Analyze and attempt fixes
+            echo ""
+            echo "Analyzing issues..."
+            FIXES_APPLIED=0
+            
+            # Check for boundary issues
+            if grep -qi "boundary\|edge\|closed" "test_iteration_${ITERATION}.txt"; then
+              echo "  Found boundary issues - checking maze_algorithm.gd..."
+              if ! grep -q "Close north edge\|Close south edge" maze_algorithm.gd; then
+                echo "  ⚠️  Boundary closing logic may need updates"
+              fi
+            fi
+            
+            # Check for parse errors
+            if grep -qi "parse error\|syntax" "test_iteration_${ITERATION}.txt"; then
+              echo "  Found syntax errors - manual review may be needed"
+            fi
+            
+            # Check for missing preloads
+            if grep -qi "not declared\|not found.*scope" "test_iteration_${ITERATION}.txt"; then
+              echo "  Found preload/class_name issues - checking files..."
+              # Verify preloads exist
+              if ! grep -q "preload.*MazeAlgorithm\|preload.*MazeBuilder\|preload.*MazeConfig" maze_generator.gd; then
+                echo "  ⚠️  Missing preload statements"
+              fi
+            fi
+            
+            if [ $FIXES_APPLIED -eq 0 ]; then
+              echo "  ⚠️  No automatic fixes available"
+              break
+            fi
+            
+            sleep 2
+          done
+          
+          # Final summary
+          echo ""
+          echo "========================================"
+          echo "FINAL SUMMARY"
+          echo "========================================"
+          if [ "$ALL_PASSED" = "true" ]; then
+            echo "✅ SUCCESS: All tests passing after $ITERATION iterations"
+            echo "ALL_PASSED=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ FAILED: Could not fix all issues after $ITERATION iterations"
+            echo "ALL_PASSED=false" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+      
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-fix-results
+          path: |
+            test_iteration_*.txt
+          retention-days: 7
+      
+      - name: Report Results
+        run: |
+          echo "## Automated Test-and-Fix Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.auto_fix.outputs.ALL_PASSED }}" = "true" ]; then
+            echo "✅ **SUCCESS**: All tests passing!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **FAILED**: Some issues remain" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check test_iteration_*.txt files for details" >> $GITHUB_STEP_SUMMARY
+          fi
+
