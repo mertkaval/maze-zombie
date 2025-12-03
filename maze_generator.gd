@@ -37,26 +37,12 @@ func _ready() -> void:
 		config = MazeConfig.create_default()
 	
 	# In editor, always recreate config to avoid placeholder issues
-	# Placeholder resources can't call methods, so we can't safely check or validate them
+	# Placeholder resources can't call methods or reliably access properties
 	if Engine.is_editor_hint():
-		# Try to safely check if config is a placeholder
-		# If accessing properties fails or returns suspicious values, recreate
-		var is_placeholder = false
-		var test_width = 0
-		
-		# Try to access a property - if it fails or is 0, likely a placeholder
-		# We use a safe check: if resource_path is empty OR width is 0, it's likely a placeholder
-		if config.resource_path == "":
-			is_placeholder = true
-		else:
-			# Try to read width - if it's 0, might be uninitialized or placeholder
-			test_width = config.maze_width
-			if test_width == 0:
-				is_placeholder = true
-		
-		if is_placeholder:
-			print("[MazeGenerator] Config appears to be placeholder or uninitialized, creating default config...")
-			config = MazeConfig.create_default()
+		# In editor, always recreate config to ensure it's not a placeholder
+		# This is the safest approach - placeholders can cause errors even when accessing properties
+		print("[MazeGenerator] Editor mode detected - recreating config to avoid placeholder issues...")
+		config = MazeConfig.create_default()
 	
 	# Validate configuration
 	# In editor, skip validation entirely to avoid placeholder issues
@@ -88,23 +74,19 @@ func generate_maze() -> void:
 	if config == null:
 		print("[MazeGenerator] Config not initialized, creating default config...")
 		config = _create_default_config()
-	else:
-		# Check if config is a placeholder resource
-		# Placeholder resources can't call methods, so we check by trying to read a property
-		# If it fails or returns default values, it might be a placeholder
-		var config_width = config.maze_width
-		
-		# If config has default/zero values, it might be uninitialized or placeholder
-		# Check for uninitialized config (width == 0) in both editor and runtime
-		if config_width == 0:
-			print("[MazeGenerator] Config appears uninitialized (width == 0), creating default config...")
-			config = _create_default_config()
-		elif Engine.is_editor_hint():
-			# In editor, also check for placeholder resources (empty resource_path)
-			# We can't call validate() on placeholders, so recreate config
-			if config.resource_path == "":
-				print("[MazeGenerator] Config appears to be placeholder, creating default config...")
+		else:
+			# Check if config is a placeholder or uninitialized
+			if Engine.is_editor_hint():
+				# In editor, always recreate to avoid placeholder issues
+				# Even accessing properties on placeholders can fail
+				print("[MazeGenerator] Editor mode - recreating config to avoid placeholder issues...")
 				config = _create_default_config()
+			else:
+				# In runtime, check if config is uninitialized (width == 0)
+				var config_width = config.maze_width
+				if config_width == 0:
+					print("[MazeGenerator] Config appears uninitialized (width == 0), creating default config...")
+					config = _create_default_config()
 		
 		# Validate configuration
 		# In editor, we skip validation entirely to avoid placeholder issues
