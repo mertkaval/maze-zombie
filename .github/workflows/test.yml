@@ -41,6 +41,12 @@ jobs:
           ./godot --headless --path . test_runner.tscn 2>&1 | tee validation_output.txt || true
         continue-on-error: true
       
+      - name: Test Maze Boundaries
+        run: |
+          echo "Testing maze boundaries..."
+          ./godot --headless --path . --script scripts/test_maze_visual.gd 2>&1 | tee maze_boundary_test.txt || true
+        continue-on-error: true
+      
       - name: Create empty output files if missing
         run: |
           # Create empty files for tests that don't generate separate output
@@ -100,6 +106,18 @@ jobs:
           fi
           
           echo ""
+          echo "Checking maze_boundary_test.txt..."
+          if [ -f maze_boundary_test.txt ]; then
+            if grep -q "PASSED" maze_boundary_test.txt 2>/dev/null; then
+              echo "✅ Maze boundaries: PASSED"
+            elif grep -q "FAILED\|ERROR" maze_boundary_test.txt 2>/dev/null; then
+              echo "❌ Maze boundaries: FAILED"
+              echo "Errors found:"
+              grep "ERROR\|FAILED" maze_boundary_test.txt 2>/dev/null | head -20 || true
+            fi
+          fi
+          
+          echo ""
           echo "=== Final Decision ==="
           # Check test_report.txt first (from test_all.gd), then validation_output.txt
           # Only check other files if they exist and have content
@@ -127,7 +145,7 @@ jobs:
           fi
           
           # Check other files only if they exist and have content
-          for file in generation_output.txt runtime_output.txt analysis_output.txt; do
+          for file in generation_output.txt runtime_output.txt analysis_output.txt maze_boundary_test.txt; do
             if [ -f "$file" ] && [ -s "$file" ]; then
               if grep -q "PASSED" "$file" 2>/dev/null; then
                 has_passed=true
@@ -161,5 +179,6 @@ jobs:
             generation_output.txt
             runtime_output.txt
             analysis_output.txt
+            maze_boundary_test.txt
           retention-days: 7
 

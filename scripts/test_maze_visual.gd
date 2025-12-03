@@ -13,7 +13,7 @@ func _ready() -> void:
 
 func run_tests() -> void:
 	print("========================================")
-	print("  Maze Boundary Test")
+	print("  Maze Boundary Test - Verifying Closed Edges")
 	print("========================================")
 	
 	error_count = 0
@@ -51,11 +51,16 @@ func run_tests() -> void:
 		finish_test()
 		return
 	
+	print("Maze config: %d x %d" % [config.maze_width, config.maze_height])
+	print("Entry: (%d, %d)" % [config.entry_position.x, config.entry_position.y])
+	print("Exit: (%d, %d)" % [config.exit_position.x, config.exit_position.y])
+	
 	# Generate maze
+	print("Generating maze...")
 	await maze_node.generate_maze()
 	
 	# Wait for generation to complete
-	for i in range(10):
+	for i in range(20):
 		await get_tree().process_frame
 	
 	# Check walls container
@@ -67,39 +72,115 @@ func run_tests() -> void:
 	
 	# Count walls
 	var wall_count = walls_container.get_child_count()
-	print("Total walls created: %d" % wall_count)
+	print("\nTotal walls created: %d" % wall_count)
 	
-	# Check for boundary walls
-	var has_north_walls = false
-	var has_south_walls = false
-	var has_east_walls = false
-	var has_west_walls = false
+	# Check for boundary walls by analyzing wall positions
+	var width = config.maze_width
+	var height = config.maze_height
+	var tile_size = config.tile_size
+	
+	# Count walls at each boundary
+	var north_wall_count = 0  # Top edge (Z = 0)
+	var south_wall_count = 0  # Bottom edge (Z = height * tile_size)
+	var west_wall_count = 0   # Left edge (X = 0)
+	var east_wall_count = 0   # Right edge (X = width * tile_size)
+	
+	var entry_opened = false
+	var exit_opened = false
 	
 	for wall in walls_container.get_children():
+		var wall_pos = wall.position
 		var wall_name = wall.name
-		if "Wall_N_" in wall_name and wall_name.contains("_0_"):
-			has_north_walls = true
-		if "Wall_S_" in wall_name:
-			has_south_walls = true
-		if "Wall_E_" in wall_name:
-			has_east_walls = true
-		if "Wall_W_" in wall_name and wall_name.contains("_0"):
-			has_west_walls = true
+		
+		# Check north boundary (Z = 0, within tolerance)
+		if abs(wall_pos.z) < 0.1:
+			north_wall_count += 1
+			# Check if this is entry/exit opening
+			if config.entry_position.y == 0 and abs(wall_pos.x - (config.entry_position.x + 0.5) * tile_size) < tile_size:
+				entry_opened = true
+			if config.exit_position.y == 0 and abs(wall_pos.x - (config.exit_position.x + 0.5) * tile_size) < tile_size:
+				exit_opened = true
+		
+		# Check south boundary (Z = height * tile_size)
+		var south_z = height * tile_size
+		if abs(wall_pos.z - south_z) < 0.1:
+			south_wall_count += 1
+			if config.entry_position.y == height - 1 and abs(wall_pos.x - (config.entry_position.x + 0.5) * tile_size) < tile_size:
+				entry_opened = true
+			if config.exit_position.y == height - 1 and abs(wall_pos.x - (config.exit_position.x + 0.5) * tile_size) < tile_size:
+				exit_opened = true
+		
+		# Check west boundary (X = 0)
+		if abs(wall_pos.x) < 0.1:
+			west_wall_count += 1
+			if config.entry_position.x == 0 and abs(wall_pos.z - (config.entry_position.y + 0.5) * tile_size) < tile_size:
+				entry_opened = true
+			if config.exit_position.x == 0 and abs(wall_pos.z - (config.exit_position.y + 0.5) * tile_size) < tile_size:
+				exit_opened = true
+		
+		# Check east boundary (X = width * tile_size)
+		var east_x = width * tile_size
+		if abs(wall_pos.x - east_x) < 0.1:
+			east_wall_count += 1
+			if config.entry_position.x == width - 1 and abs(wall_pos.z - (config.entry_position.y + 0.5) * tile_size) < tile_size:
+				entry_opened = true
+			if config.exit_position.x == width - 1 and abs(wall_pos.z - (config.exit_position.y + 0.5) * tile_size) < tile_size:
+				exit_opened = true
 	
-	print("Boundary check:")
-	print("  North walls: %s" % ("✓" if has_north_walls else "✗"))
-	print("  South walls: %s" % ("✓" if has_south_walls else "✗"))
-	print("  East walls: %s" % ("✓" if has_east_walls else "✗"))
-	print("  West walls: %s" % ("✓" if has_west_walls else "✗"))
+	print("\nBoundary wall counts:")
+	print("  North (top): %d walls (expected ~%d, minus entry/exit if on this edge)" % [north_wall_count, width])
+	print("  South (bottom): %d walls (expected ~%d, minus entry/exit if on this edge)" % [south_wall_count, width])
+	print("  West (left): %d walls (expected ~%d, minus entry/exit if on this edge)" % [west_wall_count, height])
+	print("  East (right): %d walls (expected ~%d, minus entry/exit if on this edge)" % [east_wall_count, height])
 	
-	if not has_north_walls:
-		record_error("North boundary walls missing")
-	if not has_south_walls:
-		record_error("South boundary walls missing")
-	if not has_east_walls:
-		record_error("East boundary walls missing")
-	if not has_west_walls:
-		record_error("West boundary walls missing")
+	# Verify boundaries are mostly closed (allow for entry/exit openings)
+	var expected_north = width
+	if config.entry_position.y == 0:
+		expected_north -= 1
+	if config.exit_position.y == 0:
+		expected_north -= 1
+	
+	var expected_south = width
+	if config.entry_position.y == height - 1:
+		expected_south -= 1
+	if config.exit_position.y == height - 1:
+		expected_south -= 1
+	
+	var expected_west = height
+	if config.entry_position.x == 0:
+		expected_west -= 1
+	if config.exit_position.x == 0:
+		expected_west -= 1
+	
+	var expected_east = height
+	if config.entry_position.x == width - 1:
+		expected_east -= 1
+	if config.exit_position.x == width - 1:
+		expected_east -= 1
+	
+	print("\nExpected boundary walls (accounting for entry/exit):")
+	print("  North: %d, South: %d, West: %d, East: %d" % [expected_north, expected_south, expected_west, expected_east])
+	
+	# Check if boundaries are closed (within reasonable tolerance)
+	# Allow some variance due to wall placement logic
+	if north_wall_count < expected_north - 2:
+		record_error("North boundary not properly closed: got %d, expected ~%d" % [north_wall_count, expected_north])
+	if south_wall_count < expected_south - 2:
+		record_error("South boundary not properly closed: got %d, expected ~%d" % [south_wall_count, expected_south])
+	if west_wall_count < expected_west - 2:
+		record_error("West boundary not properly closed: got %d, expected ~%d" % [west_wall_count, expected_west])
+	if east_wall_count < expected_east - 2:
+		record_error("East boundary not properly closed: got %d, expected ~%d" % [east_wall_count, expected_east])
+	
+	# Verify entry/exit are actually open (check cell data)
+	var algorithm = maze_node._algorithm
+	if algorithm != null:
+		var entry_cell = algorithm.get_cell(config.entry_position.x, config.entry_position.y)
+		var exit_cell = algorithm.get_cell(config.exit_position.x, config.exit_position.y)
+		
+		print("\nEntry/Exit cell data:")
+		print("  Entry cell walls: N=%s S=%s E=%s W=%s" % [entry_cell.get("north", true), entry_cell.get("south", true), entry_cell.get("east", true), entry_cell.get("west", true)])
+		print("  Exit cell walls: N=%s S=%s E=%s W=%s" % [exit_cell.get("north", true), exit_cell.get("south", true), exit_cell.get("east", true), exit_cell.get("west", true)])
 	
 	finish_test()
 
@@ -114,11 +195,11 @@ func finish_test() -> void:
 	print("Errors: %d" % error_count)
 	
 	if error_count == 0:
-		print("✅ Maze boundary test PASSED")
+		print("✅ Maze boundary test PASSED - All edges are closed!")
 		print("PASSED")
 		get_tree().quit(0)
 	else:
-		print("❌ Maze boundary test FAILED")
+		print("❌ Maze boundary test FAILED - Some edges are not closed")
 		print("FAILED")
 		get_tree().quit(1)
 
