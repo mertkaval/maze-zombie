@@ -2,7 +2,7 @@
 # Script to test maze generation works correctly
 # Works in headless mode: godot --headless --path . --script scripts/test_maze_generation.gd
 
-extends SceneTree
+extends Node
 
 var error_count = 0
 var test_count = 0
@@ -10,8 +10,11 @@ var test_count = 0
 const MAZE_SCENE_PATH = "res://maze.tscn"
 const EXPECTED_FLOOR_COUNT = 40 * 40  # 40x40 tiles
 
+func _ready() -> void:
+	run_tests()
+	get_tree().quit(error_count)
 
-func _initialize() -> void:
+func run_tests() -> void:
 	print("========================================")
 	print("  Maze Generation Tests")
 	print("========================================")
@@ -41,11 +44,9 @@ func _initialize() -> void:
 	if error_count == 0:
 		print("✅ All maze generation tests PASSED")
 		print("PASSED")
-		quit(0)
 	else:
 		print("❌ Maze generation tests FAILED")
 		print("FAILED")
-		quit(1)
 
 
 func test_load_maze_scene() -> void:

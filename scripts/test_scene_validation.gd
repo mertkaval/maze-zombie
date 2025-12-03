@@ -1,13 +1,18 @@
 # test_scene_validation.gd
 # Script to validate all scenes can load and have correct structure
 # Works in headless mode: godot --headless --path . --script scripts/test_scene_validation.gd
-# Also works as EditorScript in editor: File > Run
 
-extends SceneTree
+extends Node
 
 var test_results = []
 var error_count = 0
 var warning_count = 0
+
+func _ready() -> void:
+	run_tests()
+	get_tree().quit(error_count)
+
+func run_tests() -> void:
 
 # Scene paths to test
 const SCENES_TO_TEST = {
@@ -36,7 +41,7 @@ const SCENES_TO_TEST = {
 }
 
 
-func _initialize() -> void:
+func run_tests() -> void:
 	print("========================================")
 	print("  Scene Validation Tests")
 	print("========================================")
@@ -60,11 +65,9 @@ func _initialize() -> void:
 	if error_count == 0:
 		print("✅ All scene validation tests PASSED")
 		print("PASSED")
-		quit(0)
 	else:
 		print("❌ Scene validation tests FAILED")
 		print("FAILED")
-		quit(1)
 
 
 func test_scene(scene_path: String, requirements: Dictionary) -> void:

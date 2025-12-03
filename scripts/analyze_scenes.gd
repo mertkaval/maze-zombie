@@ -2,7 +2,7 @@
 # Script for deep analysis of scenes to find issues
 # Works in headless mode: godot --headless --path . --script scripts/analyze_scenes.gd
 
-extends SceneTree
+extends Node
 
 var issues = []
 var error_count = 0
@@ -16,8 +16,11 @@ const SCENES_TO_ANALYZE = [
 	"res://wall_tile.tscn"
 ]
 
+func _ready() -> void:
+	run_tests()
+	get_tree().quit(error_count)
 
-func _initialize() -> void:
+func run_tests() -> void:
 	print("========================================")
 	print("  Scene Analysis")
 	print("========================================")
@@ -41,15 +44,12 @@ func _initialize() -> void:
 	if error_count == 0 and warning_count == 0:
 		print("✅ No issues found - scenes are solid!")
 		print("PASSED")
-		quit(0)
 	else:
 		print("⚠️  Issues found - review below")
 		if error_count > 0:
 			print("FAILED")
-			quit(1)
 		else:
 			print("PASSED_WITH_WARNINGS")
-			quit(0)
 	
 	# Print all issues
 	if issues.size() > 0:

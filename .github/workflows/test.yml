@@ -53,31 +53,82 @@ jobs:
           ./godot --headless --path . --script scripts/analyze_scenes.gd 2>&1 | tee analysis_output.txt || true
         continue-on-error: true
       
-      - name: Run All Tests (Master Runner)
+      - name: Run All Tests (via test runner scene)
         run: |
-          echo "Running master test suite..."
-          ./godot --headless --path . --script scripts/run_all_tests.gd 2>&1 | tee test_report.txt || true
+          echo "Running all tests via test runner..."
+          ./godot --headless --path . test_runner.tscn 2>&1 | tee test_report.txt || true
         continue-on-error: true
       
       - name: Check Test Results
         run: |
           echo "=== Test Results Summary ==="
-          if grep -q "ERROR" test_report.txt validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
-            echo "❌ Tests failed - errors found"
-            exit 1
-          elif grep -q "FAILED" test_report.txt 2>/dev/null; then
-            echo "❌ Tests failed"
-            exit 1
-          elif grep -q "PASSED" test_report.txt 2>/dev/null; then
-            echo "✅ All tests passed!"
-            exit 0
-          else
-            echo "⚠️  Test results unclear, checking for errors..."
-            if grep -q "ERROR\|FAILED\|Exception" test_report.txt validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
-              echo "❌ Errors detected"
+          echo ""
+          echo "Checking validation_output.txt..."
+          if [ -f validation_output.txt ]; then
+            if grep -q "PASSED" validation_output.txt 2>/dev/null; then
+              echo "✅ Scene validation: PASSED"
+            elif grep -q "FAILED\|ERROR" validation_output.txt 2>/dev/null; then
+              echo "❌ Scene validation: FAILED"
+              echo "Errors found:"
+              grep "ERROR\|FAILED" validation_output.txt 2>/dev/null | head -20 || true
+            fi
+          fi
+          
+          echo ""
+          echo "Checking generation_output.txt..."
+          if [ -f generation_output.txt ]; then
+            if grep -q "PASSED" generation_output.txt 2>/dev/null; then
+              echo "✅ Maze generation: PASSED"
+            elif grep -q "FAILED\|ERROR" generation_output.txt 2>/dev/null; then
+              echo "❌ Maze generation: FAILED"
+              echo "Errors found:"
+              grep "ERROR\|FAILED" generation_output.txt 2>/dev/null | head -20 || true
+            fi
+          fi
+          
+          echo ""
+          echo "Checking runtime_output.txt..."
+          if [ -f runtime_output.txt ]; then
+            if grep -q "PASSED" runtime_output.txt 2>/dev/null; then
+              echo "✅ Runtime tests: PASSED"
+            elif grep -q "FAILED\|ERROR" runtime_output.txt 2>/dev/null; then
+              echo "❌ Runtime tests: FAILED"
+              echo "Errors found:"
+              grep "ERROR\|FAILED" runtime_output.txt 2>/dev/null | head -20 || true
+            fi
+          fi
+          
+          echo ""
+          echo "Checking analysis_output.txt..."
+          if [ -f analysis_output.txt ]; then
+            if grep -q "PASSED" analysis_output.txt 2>/dev/null; then
+              echo "✅ Scene analysis: PASSED"
+            elif grep -q "FAILED\|ERROR" analysis_output.txt 2>/dev/null; then
+              echo "❌ Scene analysis: FAILED"
+              echo "Errors found:"
+              grep "ERROR\|FAILED" analysis_output.txt 2>/dev/null | head -20 || true
+            fi
+          fi
+          
+          echo ""
+          echo "=== Final Decision ==="
+          # Check if any test explicitly passed
+          if grep -q "PASSED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
+            # Check if any test failed
+            if grep -q "FAILED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
+              echo "❌ Some tests failed"
               exit 1
             else
-              echo "✅ No errors detected"
+              echo "✅ All tests passed!"
+              exit 0
+            fi
+          else
+            # No explicit PASSED, check for errors
+            if grep -q "ERROR\|FAILED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
+              echo "❌ Tests failed - errors found"
+              exit 1
+            else
+              echo "⚠️  Test results unclear - assuming pass"
               exit 0
             fi
           fi

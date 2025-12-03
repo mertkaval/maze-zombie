@@ -2,7 +2,7 @@
 # Script to test scenes run without crashes
 # Works in headless mode: godot --headless --path . --script scripts/test_runtime.gd
 
-extends SceneTree
+extends Node
 
 var error_count = 0
 var test_count = 0
@@ -11,8 +11,11 @@ const MAIN_SCENE_PATH = "res://main.tscn"
 const MAZE_SCENE_PATH = "res://maze.tscn"
 const PLAYER_SCENE_PATH = "res://player.tscn"
 
+func _ready() -> void:
+	run_tests()
+	get_tree().quit(error_count)
 
-func _initialize() -> void:
+func run_tests() -> void:
 	print("========================================")
 	print("  Runtime Tests")
 	print("========================================")
@@ -42,11 +45,9 @@ func _initialize() -> void:
 	if error_count == 0:
 		print("✅ All runtime tests PASSED")
 		print("PASSED")
-		quit(0)
 	else:
 		print("❌ Runtime tests FAILED")
 		print("FAILED")
-		quit(1)
 
 
 func test_load_main_scene() -> void:
