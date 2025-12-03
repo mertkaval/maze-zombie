@@ -5,6 +5,13 @@
 
 [sub_resource type="Resource" id="Resource_u11kd"]
 script = ExtResource("2_h41xc")
+maze_width = 40
+maze_height = 40
+tile_size = 4.0
+wall_height = 3.0
+wall_thickness = 0.2
+entry_position = Vector2i(0, 0)
+exit_position = Vector2i(39, 39)
 
 [node name="Maze" type="Node3D"]
 script = ExtResource("1_maze_gen")

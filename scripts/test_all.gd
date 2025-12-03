@@ -18,12 +18,13 @@ func _initialize() -> void:
 	get_root().add_child(test_root)
 
 	# Run each test
+	var verify_errors = await run_test("Maze Generation Verification", "res://scripts/verify_maze_generation.gd", test_root)
 	var validation_errors = await run_test("Scene Validation", "res://scripts/test_scene_validation.gd", test_root)
 	var generation_errors = await run_test("Maze Generation", "res://scripts/test_maze_generation.gd", test_root)
 	var runtime_errors = await run_test("Runtime", "res://scripts/test_runtime.gd", test_root)
 	var analysis_errors = await run_test("Scene Analysis", "res://scripts/analyze_scenes.gd", test_root)
 
-	total_errors = validation_errors + generation_errors + runtime_errors + analysis_errors
+	total_errors = verify_errors + validation_errors + generation_errors + runtime_errors + analysis_errors
 	
 	# Final summary
 	print("\n" + "=".repeat(50))
