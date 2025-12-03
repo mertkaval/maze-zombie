@@ -72,7 +72,7 @@ func run_specific_test(test: String) -> void:
 
 func run_test_script(parent: Node, test_name_param: String, script: GDScript) -> void:
 	if script == null:
-		print("❌ Failed to load script for: %s" % test_name)
+		print("❌ Failed to load script for: %s" % test_name_param)
 		return
 
 	print("\n" + "=".repeat(50))

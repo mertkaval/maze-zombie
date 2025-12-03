@@ -130,7 +130,8 @@ func _recursive_backtrack(start: Vector2i) -> void:
 			cells_visited += 1
 			
 			# Progress logging every 10%
-			if cells_visited % (total_cells / 10) == 0:
+			# Avoid division by zero for small mazes (minimum is 2x2=4 cells)
+			if total_cells >= 10 and cells_visited % (total_cells / 10) == 0:
 				var progress = (cells_visited * 100) / total_cells
 				print("[MazeAlgorithm] Progress: %d%%" % progress)
 		else:
@@ -251,4 +252,3 @@ func print_maze_ascii() -> void:
 		
 		print(mid_line)
 		print(bottom_line)
-

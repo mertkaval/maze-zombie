@@ -36,13 +36,37 @@ func _ready() -> void:
 		print("[MazeGenerator] No config provided, using defaults")
 		config = MazeConfig.create_default()
 	
-	# In editor, always recreate config to avoid placeholder issues
+	# In editor, check if config is a placeholder and recreate only if needed
 	# Placeholder resources can't call methods or reliably access properties
 	if Engine.is_editor_hint():
-		# In editor, always recreate config to ensure it's not a placeholder
-		# This is the safest approach - placeholders can cause errors even when accessing properties
-		print("[MazeGenerator] Editor mode detected - recreating config to avoid placeholder issues...")
-		config = MazeConfig.create_default()
+		# Try to preserve seed values before checking if it's a placeholder
+		# These might be set by regenerate_with_seed() or user modifications
+		var saved_use_seed = false
+		var saved_random_seed = 0
+		var is_placeholder = false
+		
+		# Try to access seed values - if config is valid, preserve them
+		# If accessing fails, we'll catch it and treat as placeholder
+		var test_width = config.maze_width
+		if test_width == 0:
+			# Config appears uninitialized (placeholder or default)
+			# Check if it's a placeholder by resource_path
+			if config.resource_path == "":
+				is_placeholder = true
+		else:
+			# Config seems valid, preserve seed values before any potential recreation
+			saved_use_seed = config.use_seed
+			saved_random_seed = config.random_seed
+			# If resource_path is empty but width is valid, it's not a placeholder
+			# (it might be a runtime-created config)
+		
+		# Only recreate if it's actually a placeholder (empty path AND zero width)
+		if is_placeholder:
+			print("[MazeGenerator] Editor mode detected - config is placeholder, recreating...")
+			config = MazeConfig.create_default()
+			# Restore preserved seed values
+			config.use_seed = saved_use_seed
+			config.random_seed = saved_random_seed
 	
 	# Validate configuration
 	# In editor, skip validation entirely to avoid placeholder issues
@@ -77,10 +101,30 @@ func generate_maze() -> void:
 	else:
 		# Check if config is a placeholder or uninitialized
 		if Engine.is_editor_hint():
-			# In editor, always recreate to avoid placeholder issues
-			# Even accessing properties on placeholders can fail
-			print("[MazeGenerator] Editor mode - recreating config to avoid placeholder issues...")
-			config = _create_default_config()
+			# In editor, check if config is a placeholder before recreating
+			# Preserve seed values if config is valid (they might be set by regenerate_with_seed())
+			var saved_use_seed = false
+			var saved_random_seed = 0
+			var is_placeholder = false
+			
+			# Try to access properties to determine if config is valid
+			var test_width = config.maze_width
+			if test_width == 0:
+				# Config appears uninitialized - check if it's a placeholder
+				if config.resource_path == "":
+					is_placeholder = true
+			else:
+				# Config seems valid, preserve seed values before any potential recreation
+				saved_use_seed = config.use_seed
+				saved_random_seed = config.random_seed
+			
+			# Only recreate if it's actually a placeholder (empty path AND zero width)
+			if is_placeholder:
+				print("[MazeGenerator] Editor mode - config is placeholder, recreating...")
+				config = _create_default_config()
+				# Restore preserved seed values
+				config.use_seed = saved_use_seed
+				config.random_seed = saved_random_seed
 		else:
 			# In runtime, check if config is uninitialized (width == 0)
 			var config_width = config.maze_width
@@ -105,7 +149,7 @@ func generate_maze() -> void:
 	var total_start = Time.get_ticks_msec()
 	
 	# Clear any existing maze
-	_clear_existing_maze()
+	await _clear_existing_maze()
 	
 	# Step 1: Generate maze data using algorithm
 	print("\n[MazeGenerator] Step 1: Generating maze layout...")
@@ -151,6 +195,7 @@ func _create_default_config() -> MazeConfig:
 
 
 ## Clears any existing maze geometry
+## Note: This function is async in runtime mode to wait for node cleanup
 func _clear_existing_maze() -> void:
 	# In editor context, we need to remove children immediately
 	# In runtime, queue_free works fine

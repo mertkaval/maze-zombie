@@ -41,6 +41,13 @@ jobs:
           ./godot --headless --path . test_runner.tscn 2>&1 | tee validation_output.txt || true
         continue-on-error: true
       
+      - name: Create empty output files if missing
+        run: |
+          # Create empty files for tests that don't generate separate output
+          # This ensures the workflow checks don't fail on missing files
+          touch generation_output.txt runtime_output.txt analysis_output.txt || true
+        continue-on-error: true
+      
       - name: Check Test Results
         run: |
           echo "=== Test Results Summary ==="
@@ -94,25 +101,53 @@ jobs:
           
           echo ""
           echo "=== Final Decision ==="
-          # Check if any test explicitly passed
-          if grep -q "PASSED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
-            # Check if any test failed
-            if grep -q "FAILED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
-              echo "❌ Some tests failed"
-              exit 1
-            else
-              echo "✅ All tests passed!"
-              exit 0
+          # Check test_report.txt first (from test_all.gd), then validation_output.txt
+          # Only check other files if they exist and have content
+          local has_passed=false
+          local has_failed=false
+          
+          # Check test_report.txt (main test output)
+          if [ -f test_report.txt ]; then
+            if grep -q "PASSED" test_report.txt 2>/dev/null; then
+              has_passed=true
             fi
+            if grep -q "FAILED\|ERROR" test_report.txt 2>/dev/null; then
+              has_failed=true
+            fi
+          fi
+          
+          # Check validation_output.txt (from test_runner.tscn)
+          if [ -f validation_output.txt ]; then
+            if grep -q "PASSED" validation_output.txt 2>/dev/null; then
+              has_passed=true
+            fi
+            if grep -q "FAILED\|ERROR" validation_output.txt 2>/dev/null; then
+              has_failed=true
+            fi
+          fi
+          
+          # Check other files only if they exist and have content
+          for file in generation_output.txt runtime_output.txt analysis_output.txt; do
+            if [ -f "$file" ] && [ -s "$file" ]; then
+              if grep -q "PASSED" "$file" 2>/dev/null; then
+                has_passed=true
+              fi
+              if grep -q "FAILED\|ERROR" "$file" 2>/dev/null; then
+                has_failed=true
+              fi
+            fi
+          done
+          
+          # Final decision
+          if [ "$has_failed" = true ]; then
+            echo "❌ Some tests failed"
+            exit 1
+          elif [ "$has_passed" = true ]; then
+            echo "✅ All tests passed!"
+            exit 0
           else
-            # No explicit PASSED, check for errors
-            if grep -q "ERROR\|FAILED" validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
-              echo "❌ Tests failed - errors found"
-              exit 1
-            else
-              echo "⚠️  Test results unclear - assuming pass"
-              exit 0
-            fi
+            echo "⚠️  Test results unclear - assuming pass"
+            exit 0
           fi
       
       - name: Upload Test Artifacts

@@ -89,4 +89,3 @@ func print_config() -> void:
 	else:
 		print("  Seed: Random")
 	print("==========================")
-
