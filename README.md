@@ -18,7 +18,7 @@ A procedural 3D maze generator built with Godot 4.5.1, featuring recursive backt
 ### Generate Maze
 1. Open project in Godot 4.5.1
 2. Go to **Tools > Run Script**
-3. Select `generate_maze_editor.gd`
+3. Open `maze.tscn` in the editor (it will generate automatically)
 4. Click **Run**
 5. Open `maze.tscn` to see the generated maze
 

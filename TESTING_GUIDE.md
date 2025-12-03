@@ -22,11 +22,9 @@
    ```
 
 2. **Generate the Maze**
-   - Go to **Tools > Run Script** (or press `Ctrl+Shift+X`)
-   - Select `generate_maze_editor.gd`
-   - Click "Run"
-   - Check output for success messages
-   - Open `maze.tscn` in the editor to see the generated maze
+   - Simply open `maze.tscn` in the editor
+   - The maze will generate automatically when the scene opens
+   - You'll see the generated maze with floor tiles and walls
 
 3. **Test the Game**
    - Press `F5` or click the Play button
@@ -109,7 +107,7 @@ The CI pipeline will automatically:
 ## Troubleshooting
 
 ### Maze doesn't appear
-- Run `generate_maze_editor.gd` from Tools menu
+- Open `maze.tscn` in the editor (generates automatically)
 - Check console for error messages
 - Verify `floor_tile.tscn` and `wall_tile.tscn` exist
 
