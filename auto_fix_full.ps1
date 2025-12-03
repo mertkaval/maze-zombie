@@ -166,7 +166,7 @@ function FixPreloadStatements {
     param([string]$ErrorLine)
     
     # Extract which class is missing
-    $filesToCheck = @("maze_generator.gd", "maze_builder.gd", "generate_maze_editor.gd")
+    $filesToCheck = @("maze_generator.gd", "maze_builder.gd")
     
     foreach ($file in $filesToCheck) {
         if (-not (Test-Path $file)) {

@@ -3,10 +3,9 @@
 # Attach this script to a Node3D in your scene
 # @tool annotation allows this to run in the editor
 #
-# NOTE: This script CANNOT be run directly from Script Editor (File > Run)
-#       because it extends Node3D, not EditorScript.
-#       To manually generate the maze, use: generate_maze_editor.gd
-#       Or simply open maze.tscn in the editor - it will generate automatically.
+# NOTE: This script automatically generates the maze when maze.tscn is opened.
+#       Simply open maze.tscn in the editor to see the generated maze.
+#       The maze generates automatically via _ready() function.
 
 @tool
 extends Node3D
