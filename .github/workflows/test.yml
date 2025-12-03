@@ -1,0 +1,97 @@
+name: Godot Scene Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test:
+    name: Test Scenes and Maze Generation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Godot 4.5.1 Headless
+        run: |
+          echo "Downloading Godot 4.5.1 headless..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5.1-stable_linux.x86_64
+          mv Godot_v4.5.1-stable_linux.x86_64 godot
+          echo "Godot version:"
+          ./godot --version
+      
+      - name: Create scripts directory
+        run: mkdir -p scripts
+      
+      - name: Run Scene Validation Tests
+        run: |
+          echo "Running scene validation tests..."
+          ./godot --headless --path . -s scripts/test_scene_validation.gd 2>&1 | tee validation_output.txt || true
+        continue-on-error: true
+      
+      - name: Run Maze Generation Tests
+        run: |
+          echo "Running maze generation tests..."
+          ./godot --headless --path . -s scripts/test_maze_generation.gd 2>&1 | tee generation_output.txt || true
+        continue-on-error: true
+      
+      - name: Run Runtime Tests
+        run: |
+          echo "Running runtime tests..."
+          ./godot --headless --path . -s scripts/test_runtime.gd 2>&1 | tee runtime_output.txt || true
+        continue-on-error: true
+      
+      - name: Analyze Scenes
+        run: |
+          echo "Analyzing scenes..."
+          ./godot --headless --path . -s scripts/analyze_scenes.gd 2>&1 | tee analysis_output.txt || true
+        continue-on-error: true
+      
+      - name: Run All Tests (Master Runner)
+        run: |
+          echo "Running master test suite..."
+          ./godot --headless --path . -s scripts/run_all_tests.gd 2>&1 | tee test_report.txt || true
+        continue-on-error: true
+      
+      - name: Check Test Results
+        run: |
+          echo "=== Test Results Summary ==="
+          if grep -q "ERROR" test_report.txt validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
+            echo "❌ Tests failed - errors found"
+            exit 1
+          elif grep -q "FAILED" test_report.txt 2>/dev/null; then
+            echo "❌ Tests failed"
+            exit 1
+          elif grep -q "PASSED" test_report.txt 2>/dev/null; then
+            echo "✅ All tests passed!"
+            exit 0
+          else
+            echo "⚠️  Test results unclear, checking for errors..."
+            if grep -q "ERROR\|FAILED\|Exception" test_report.txt validation_output.txt generation_output.txt runtime_output.txt analysis_output.txt 2>/dev/null; then
+              echo "❌ Errors detected"
+              exit 1
+            else
+              echo "✅ No errors detected"
+              exit 0
+            fi
+          fi
+      
+      - name: Upload Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            test_report.txt
+            validation_output.txt
+            generation_output.txt
+            runtime_output.txt
+            analysis_output.txt
+          retention-days: 7
+
