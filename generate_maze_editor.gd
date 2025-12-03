@@ -96,7 +96,27 @@ func _run() -> void:
 	
 	print("========================================")
 	
+	# Verify nodes were created before packing
+	var floor_tiles_check = maze_node.get_node_or_null("FloorTiles")
+	var walls_check = maze_node.get_node_or_null("Walls")
+	
+	if floor_tiles_check == null or walls_check == null:
+		push_error("[EditorScript] Maze generation failed - nodes not found!")
+		push_error("[EditorScript] FloorTiles: %s, Walls: %s" % [floor_tiles_check != null, walls_check != null])
+		maze_instance.queue_free()
+		return
+	
+	print("[EditorScript] Verifying maze structure...")
+	print("[EditorScript]   Floor tiles: %d" % floor_tiles_check.get_child_count())
+	print("[EditorScript]   Walls: %d" % walls_check.get_child_count())
+	
+	if floor_tiles_check.get_child_count() == 0:
+		push_error("[EditorScript] No floor tiles created!")
+		maze_instance.queue_free()
+		return
+	
 	# Pack the scene with the generated maze
+	print("[EditorScript] Packing scene...")
 	var packed_scene = PackedScene.new()
 	var result = packed_scene.pack(maze_instance)
 	if result != OK:
@@ -104,15 +124,24 @@ func _run() -> void:
 		maze_instance.queue_free()
 		return
 	
+	print("[EditorScript] Packing successful!")
+	
 	# Save the scene
+	print("[EditorScript] Saving scene to: %s" % MAZE_SCENE_PATH)
 	var save_result = ResourceSaver.save(packed_scene, MAZE_SCENE_PATH)
 	if save_result != OK:
 		push_error("[EditorScript] Failed to save scene! Error code: %d" % save_result)
-	else:
-		print("[EditorScript] Scene saved successfully!")
-		print("[EditorScript] Open maze.tscn in the editor to see the generated maze.")
+		maze_instance.queue_free()
+		return
+	
+	print("[EditorScript] Scene saved successfully!")
+	print("[EditorScript] Open maze.tscn in the editor to see the generated maze.")
 	
 	# Clean up
 	maze_instance.queue_free()
 	
-	print("\n[EditorScript] Done! Open maze.tscn in the editor to view the maze.")
+	# Reload the scene in the editor to show changes
+	EditorInterface.reload_scene_from_path(MAZE_SCENE_PATH)
+	
+	print("\n[EditorScript] Done! The maze scene has been updated.")
+	print("[EditorScript] If maze.tscn is open, it should now show the generated maze.")
