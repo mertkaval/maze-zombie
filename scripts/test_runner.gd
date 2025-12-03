@@ -33,9 +33,9 @@ func _ready() -> void:
 
 
 func run_test_script(test_name: String, script_path: String) -> void:
-	print("\n" + "=" * 50)
+	print("\n" + "=".repeat(50))
 	print("Running: %s" % test_name)
-	print("=" * 50)
+	print("=".repeat(50))
 	
 	# Load the script
 	var script = load(script_path) as GDScript

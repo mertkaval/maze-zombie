@@ -101,11 +101,11 @@ func test_generate_maze() -> void:
 	
 	print("  ✓ Maze node found with generate_maze() method")
 	
-	# Call generate_maze()
+	# Call generate_maze() (async function)
 	print("  Calling generate_maze()...")
-	maze_node.generate_maze()
+	await maze_node.generate_maze()
 	
-	# Wait a frame for generation to complete
+	# Wait additional frames to ensure all nodes are added
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
@@ -168,8 +168,8 @@ func test_maze_structure() -> void:
 		instance.queue_free()
 		return
 	
-	# Generate maze
-	maze_node.generate_maze()
+	# Generate maze (async function)
+	await maze_node.generate_maze()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
@@ -243,6 +243,8 @@ func test_different_seeds() -> void:
 	var maze_node1 = instance1 if instance1.name == "Maze" else instance1.get_node_or_null("Maze")
 	if maze_node1 != null and maze_node1.has_method("regenerate_with_seed"):
 		maze_node1.regenerate_with_seed(1)
+		# regenerate_with_seed calls generate_maze() which is async, wait for completion
+		await get_tree().process_frame
 		await get_tree().process_frame
 		await get_tree().process_frame
 		var walls1 = maze_node1.get_node_or_null("Walls")
@@ -256,6 +258,8 @@ func test_different_seeds() -> void:
 	var maze_node2 = instance2 if instance2.name == "Maze" else instance2.get_node_or_null("Maze")
 	if maze_node2 != null and maze_node2.has_method("regenerate_with_seed"):
 		maze_node2.regenerate_with_seed(42)
+		# regenerate_with_seed calls generate_maze() which is async, wait for completion
+		await get_tree().process_frame
 		await get_tree().process_frame
 		await get_tree().process_frame
 		var walls2 = maze_node2.get_node_or_null("Walls")

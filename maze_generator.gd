@@ -93,6 +93,7 @@ func _ready() -> void:
 
 
 ## Main generation function - can be called to regenerate
+## Note: This function is async because it awaits maze cleanup
 func generate_maze() -> void:
 	# Ensure config is initialized (in case generate_maze is called before _ready)
 	if config == null:
@@ -232,16 +233,18 @@ func _clear_existing_maze() -> void:
 
 
 ## Regenerates the maze with a new random seed
+## Note: This function is async because generate_maze() is async
 func regenerate_random() -> void:
 	config.use_seed = false
-	generate_maze()
+	await generate_maze()
 
 
 ## Regenerates the maze with a specific seed
+## Note: This function is async because generate_maze() is async
 func regenerate_with_seed(new_seed: int) -> void:
 	config.use_seed = true
 	config.random_seed = new_seed
-	generate_maze()
+	await generate_maze()
 
 
 ## Returns the cell data at a given position (for external use)
