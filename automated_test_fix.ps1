@@ -14,11 +14,13 @@ Write-Host ""
 
 while ($iteration -lt $maxIterations -and -not $allPassed) {
     $iteration++
-    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "ITERATION $iteration" -ForegroundColor Cyan
-    Write-Host "========================================`n" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
     
-    # Run all tests
+    # Run tests
     Write-Host "Running tests..." -ForegroundColor Yellow
     $testOutput = & $godot --headless --path C:\Users\mert3\maze-zombie --script scripts/test_all.gd 2>&1 | Out-String
     $testOutput | Out-File -FilePath "test_iteration_$iteration.txt" -Encoding UTF8
@@ -29,30 +31,32 @@ while ($iteration -lt $maxIterations -and -not $allPassed) {
     
     Write-Host "Test Results:" -ForegroundColor Yellow
     if ($hasPassed) {
-        Write-Host "  ✅ All tests PASSED!" -ForegroundColor Green
+        Write-Host "  All tests PASSED!" -ForegroundColor Green
         $allPassed = $true
         break
     } elseif ($hasErrors) {
-        Write-Host "  ❌ Tests FAILED - Analyzing errors..." -ForegroundColor Red
+        Write-Host "  Tests FAILED - Analyzing errors..." -ForegroundColor Red
         
         # Extract error messages
         $errors = $testOutput | Select-String -Pattern "ERROR|FAILED" | Select-Object -First 10
         
-        Write-Host "`nErrors found:" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Errors found:" -ForegroundColor Yellow
         foreach ($error in $errors) {
             Write-Host "  - $($error.Line)" -ForegroundColor Red
         }
         
         # Analyze and fix
-        Write-Host "`nAnalyzing issues..." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Analyzing issues..." -ForegroundColor Yellow
         $fixesApplied = AnalyzeAndFixErrors -Errors $errors -TestOutput $testOutput
         
         if ($fixesApplied -eq 0) {
-            Write-Host "  ⚠️  No automatic fixes available" -ForegroundColor Yellow
+            Write-Host "  No automatic fixes available" -ForegroundColor Yellow
             Write-Host "  Manual intervention may be required" -ForegroundColor Yellow
             break
         } else {
-            Write-Host "  ✓ Applied $fixesApplied fix(es)" -ForegroundColor Green
+            Write-Host "  Applied $fixesApplied fix(es)" -ForegroundColor Green
         }
     }
     
@@ -60,16 +64,18 @@ while ($iteration -lt $maxIterations -and -not $allPassed) {
 }
 
 # Final summary
-Write-Host "`n========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "FINAL SUMMARY" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 if ($allPassed) {
-    Write-Host "✅ SUCCESS: All tests passing after $iteration iterations" -ForegroundColor Green
+    Write-Host "SUCCESS: All tests passing after $iteration iterations" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "❌ FAILED: Could not fix all issues after $iteration iterations" -ForegroundColor Red
-    Write-Host "`nCheck test_iteration_*.txt files for details" -ForegroundColor Yellow
+    Write-Host "FAILED: Could not fix all issues after $iteration iterations" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Check test_iteration_*.txt files for details" -ForegroundColor Yellow
     exit 1
 }
 
@@ -132,7 +138,6 @@ function FixBoundaryIssues {
     # Check if boundaries are closed
     if ($content -notmatch "Close north edge|Close south edge|Close west edge|Close east edge") {
         Write-Host "      Updating boundary closing logic..." -ForegroundColor Gray
-        # The fix is already applied, but we can verify
         return $false
     }
     
@@ -143,7 +148,8 @@ function FixSyntaxIssues {
     param([string]$ErrorLine)
     
     # Extract file and line number from error
-    if ($ErrorLine -match "res://([^:]+):(\d+)") {
+    $pattern = "res://([^:]+):(\d+)"
+    if ($ErrorLine -match $pattern) {
         $file = $matches[1]
         $lineNum = [int]$matches[2]
         
@@ -165,7 +171,8 @@ function FixMissingResourceIssues {
     param([string]$ErrorLine)
     
     # Extract missing resource path
-    if ($ErrorLine -match "res://([^\s]+)") {
+    $pattern = "res://([^\s]+)"
+    if ($ErrorLine -match $pattern) {
         $resourcePath = $matches[1]
         Write-Host "      Missing resource: $resourcePath" -ForegroundColor Gray
         
@@ -188,4 +195,3 @@ function FixPreloadIssues {
     
     return $false
 }
-
