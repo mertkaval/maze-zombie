@@ -154,7 +154,6 @@ function FixSyntaxIssues {
             if ($lineNum -le $lines.Count) {
                 $problemLine = $lines[$lineNum - 1]
                 Write-Host "      Problem line: $problemLine" -ForegroundColor Gray
-                # Could add automatic fixes here
             }
         }
     }
@@ -171,7 +170,7 @@ function FixMissingResourceIssues {
         Write-Host "      Missing resource: $resourcePath" -ForegroundColor Gray
         
         if (-not (Test-Path $resourcePath)) {
-            Write-Host "      ⚠️  Resource file does not exist: $resourcePath" -ForegroundColor Yellow
+            Write-Host "      Warning: Resource file does not exist: $resourcePath" -ForegroundColor Yellow
         }
     }
     
@@ -184,7 +183,6 @@ function FixPreloadIssues {
     # Check if we need to add preload statements
     if ($ErrorLine -match "MazeAlgorithm|MazeBuilder|MazeConfig") {
         Write-Host "      Checking for preload statements..." -ForegroundColor Gray
-        # Preloads should already be in place, but we can verify
         return $false
     }
     
