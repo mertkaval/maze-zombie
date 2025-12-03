@@ -88,19 +88,19 @@ func _ready() -> void:
 	# Print configuration if debug mode
 	# Skip in editor if config might be a placeholder
 	if debug_mode:
-		if not Engine.is_editor_hint() or (config != null and config.resource_path != ""):
-			# Safe to call print_config - either runtime or non-placeholder config
-			config.print_config()
+		if not Engine.is_editor_hint():
+			# Runtime: safe to call print_config
+			if config != null:
+				config.print_config()
 		else:
-			# In editor with placeholder, print manually
-			print("[MazeGenerator] Config: %d x %d, Entry: (%d, %d), Exit: (%d, %d)" % [
-				config.maze_width if config != null else 0,
-				config.maze_height if config != null else 0,
-				config.entry_position.x if config != null else 0,
-				config.entry_position.y if config != null else 0,
-				config.exit_position.x if config != null else 0,
-				config.exit_position.y if config != null else 0
-			])
+			# Editor: check if config is a placeholder before calling methods
+			if config != null and config.resource_path != "":
+				# Non-placeholder config, safe to call print_config
+				config.print_config()
+			else:
+				# Placeholder config in editor - skip printing to avoid errors
+				# Config will be recreated above if needed
+				print("[MazeGenerator] Config printing skipped (placeholder in editor)")
 	
 	# Generate the maze
 	generate_maze()
