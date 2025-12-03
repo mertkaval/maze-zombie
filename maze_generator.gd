@@ -11,6 +11,11 @@
 @tool
 extends Node3D
 
+# Preload class_name scripts for headless mode compatibility
+const MazeAlgorithm = preload("res://maze_algorithm.gd")
+const MazeBuilder = preload("res://maze_builder.gd")
+const MazeConfig = preload("res://maze_config.gd")
+
 ## Configuration resource - can be set in editor or uses default
 @export var config: MazeConfig
 

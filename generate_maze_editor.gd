@@ -9,6 +9,9 @@
 @tool
 extends EditorScript
 
+# Preload for headless mode compatibility
+const MazeConfig = preload("res://maze_config.gd")
+
 ## Path to the maze scene
 const MAZE_SCENE_PATH = "res://maze.tscn"
 

@@ -65,7 +65,7 @@ func run_test_script(test_name: String, script_path: String) -> void:
 	
 	# Check error count
 	var errors = 0
-	if test_node.has("error_count"):
+	if "error_count" in test_node:
 		errors = test_node.error_count
 	
 	var passed = errors == 0

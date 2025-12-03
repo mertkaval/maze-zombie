@@ -67,7 +67,7 @@ func run_test(test_name: String, script_path: String, parent: Node) -> int:
 	var errors = 0
 	if test_node.has_method("get_error_count"):
 		errors = test_node.get_error_count()
-	elif test_node.has("error_count"):
+	elif "error_count" in test_node:
 		errors = test_node.error_count
 	
 	test_node.queue_free()

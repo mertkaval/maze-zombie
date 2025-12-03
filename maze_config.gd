@@ -67,7 +67,8 @@ func validate() -> bool:
 
 ## Creates a default configuration
 static func create_default() -> MazeConfig:
-	var config = MazeConfig.new()
+	# Use self.new() or direct instantiation for headless compatibility
+	var config = load("res://maze_config.gd").new()
 	# All defaults are already set via @export
 	return config
 

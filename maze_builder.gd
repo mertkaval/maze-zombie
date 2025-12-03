@@ -5,6 +5,9 @@
 class_name MazeBuilder
 extends RefCounted
 
+# Preload for headless mode compatibility
+const MazeConfig = preload("res://maze_config.gd")
+
 var _config: MazeConfig
 var _parent_node: Node3D
 
