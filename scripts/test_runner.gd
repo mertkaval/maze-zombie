@@ -12,11 +12,8 @@ func _ready() -> void:
 	print("  Test Runner - Executing All Tests")
 	print("========================================")
 	
-	# Run all tests by loading and executing scripts
-	run_test_script("Scene Validation", "res://scripts/test_scene_validation.gd")
-	run_test_script("Maze Generation", "res://scripts/test_maze_generation.gd")
-	run_test_script("Runtime", "res://scripts/test_runtime.gd")
-	run_test_script("Scene Analysis", "res://scripts/analyze_scenes.gd")
+	# Run all tests by loading and executing scripts (async)
+	await run_all_tests_async()
 	
 	# Final result
 	print("\n========================================")
@@ -30,6 +27,14 @@ func _ready() -> void:
 		print("❌ SOME TESTS FAILED")
 		print("FAILED")
 		get_tree().quit(1)
+
+
+func run_all_tests_async() -> void:
+	# Run all tests sequentially, awaiting each one
+	await run_test_script("Scene Validation", "res://scripts/test_scene_validation.gd")
+	await run_test_script("Maze Generation", "res://scripts/test_maze_generation.gd")
+	await run_test_script("Runtime", "res://scripts/test_runtime.gd")
+	await run_test_script("Scene Analysis", "res://scripts/analyze_scenes.gd")
 
 
 func run_test_script(test_name: String, script_path: String) -> void:
@@ -54,8 +59,9 @@ func run_test_script(test_name: String, script_path: String) -> void:
 	test_node.set_script(script)
 	
 	# Wait for _ready to execute (which calls run_tests)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# Wait multiple frames to ensure async operations complete (like maze generation)
+	for i in range(20):
+		await get_tree().process_frame
 	
 	# Check error count
 	var errors = 0
