@@ -25,13 +25,17 @@ func _initialize() -> void:
 	await process_frame
 	await process_frame
 	
-	var maze_node = maze_instance.get_node_or_null("Maze")
-	if maze_node == null:
-		print("ERROR: Maze node not found")
-		quit(1)
-		return
+	# The root of maze.tscn is the Maze node itself
+	var maze_node = maze_instance
+	if maze_node.name != "Maze":
+		# Try to find Maze node as child
+		maze_node = maze_instance.get_node_or_null("Maze")
+		if maze_node == null:
+			print("ERROR: Maze node not found (root name: %s)" % maze_instance.name)
+			quit(1)
+			return
 	
-	print("✓ Maze node found")
+	print("✓ Maze node found: %s" % maze_node.name)
 	
 	# Wait for generation (maze_generator._ready() should have run)
 	for i in range(20):
