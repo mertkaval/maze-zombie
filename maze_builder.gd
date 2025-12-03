@@ -134,12 +134,14 @@ func _create_walls(cells: Array) -> void:
 			
 			# North wall (at top edge of cell, blocks Z- direction)
 			# This is an East-West oriented wall (runs along X axis)
+			# Place for all cells - outer boundary will be closed
 			if cell["north"]:
 				var wall_pos = Vector3(cell_center_x, wall_y, y * tile_size)
 				_place_wall(walls_container, wall_pos, false, "Wall_N_%d_%d" % [x, y])
 			
 			# South wall (at bottom edge of cell, blocks Z+ direction)
 			# Only place south walls for the last row to avoid duplicates
+			# This ensures outer boundary is closed
 			# This is an East-West oriented wall
 			if y == height - 1 and cell["south"]:
 				var wall_pos = Vector3(cell_center_x, wall_y, (y + 1) * tile_size)
@@ -147,12 +149,14 @@ func _create_walls(cells: Array) -> void:
 			
 			# West wall (at left edge of cell, blocks X- direction)
 			# This is a North-South oriented wall (runs along Z axis)
+			# Place for all cells - outer boundary will be closed
 			if cell["west"]:
 				var wall_pos = Vector3(x * tile_size, wall_y, cell_center_z)
 				_place_wall(walls_container, wall_pos, true, "Wall_W_%d_%d" % [x, y])
 			
 			# East wall (at right edge of cell, blocks X+ direction)
 			# Only place east walls for the last column to avoid duplicates
+			# This ensures outer boundary is closed
 			# This is a North-South oriented wall
 			if x == width - 1 and cell["east"]:
 				var wall_pos = Vector3((x + 1) * tile_size, wall_y, cell_center_z)

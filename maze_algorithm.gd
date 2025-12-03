@@ -172,8 +172,26 @@ func _remove_wall(current: Vector2i, next: Vector2i, direction: String) -> void:
 
 
 ## Opens entry and exit points on the outer walls
+## Also ensures all outer edges are closed except at entry/exit
 func _open_entry_exit(entry: Vector2i, exit: Vector2i) -> void:
-	# Open entry - remove appropriate outer wall
+	# First, ensure all outer edges are closed
+	# Close north edge (top row)
+	for x in range(_width):
+		_cells[0][x]["north"] = true
+	
+	# Close south edge (bottom row)
+	for x in range(_width):
+		_cells[_height - 1][x]["south"] = true
+	
+	# Close west edge (left column)
+	for y in range(_height):
+		_cells[y][0]["west"] = true
+	
+	# Close east edge (right column)
+	for y in range(_height):
+		_cells[y][_width - 1]["east"] = true
+	
+	# Now open entry - remove appropriate outer wall
 	if entry.x == 0:
 		_cells[entry.y][entry.x]["west"] = false
 		print("[MazeAlgorithm] Entry opened on west wall at (%d, %d)" % [entry.x, entry.y])
