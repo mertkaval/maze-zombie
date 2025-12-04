@@ -28,9 +28,9 @@ func _run() -> void:
 		DirAccess.make_dir_recursive_absolute("res://maze_levels")
 		print("[EditorScript] Created maze_levels directory")
 	
-	# Generate unique filename with timestamp
-	var timestamp = Time.get_unix_time_from_system()
-	var level_name = "maze_level_%d.tscn" % timestamp
+	# Find next available maze number (maze_01, maze_02, etc.)
+	var next_number = _find_next_maze_number()
+	var level_name = "maze_%02d.tscn" % next_number
 	var level_path = MAZE_LEVELS_PATH + level_name
 	
 	print("[EditorScript] Generating new maze level: %s" % level_name)
@@ -112,8 +112,29 @@ func _run() -> void:
 	print("\n[EditorScript] Done! New maze level created in maze_levels/ folder.")
 
 
+func _find_next_maze_number() -> int:
+	# Find the highest existing maze number and return next
+	var dir = DirAccess.open(MAZE_LEVELS_PATH)
+	if dir == null:
+		return 1
+	
+	var max_number = 0
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != "":
+		if file_name.begins_with("maze_") and file_name.ends_with(".tscn"):
+			# Extract number from filename (maze_01.tscn -> 01)
+			var number_str = file_name.trim_prefix("maze_").trim_suffix(".tscn")
+			var number = number_str.to_int()
+			if number > max_number:
+				max_number = number
+		file_name = dir.get_next()
+	
+	return max_number + 1
+
+
 func _set_owners_recursive(node: Node, owner: Node) -> void:
 	node.owner = owner
 	for child in node.get_children():
 		_set_owners_recursive(child, owner)
-
