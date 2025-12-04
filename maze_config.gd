@@ -7,8 +7,8 @@ extends Resource
 
 ## Maze Dimensions
 @export_group("Maze Dimensions")
-@export var maze_width: int = 10  ## Number of tiles in X direction
-@export var maze_height: int = 10  ## Number of tiles in Z direction
+@export var maze_width: int = 20  ## Number of tiles in X direction
+@export var maze_height: int = 20  ## Number of tiles in Z direction
 
 ## Tile Properties
 @export_group("Tile Properties")

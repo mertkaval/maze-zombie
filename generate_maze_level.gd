@@ -7,7 +7,6 @@
 @tool
 extends EditorScript
 
-# MazeConfig is a class_name, no need to preload
 const MAZE_LEVELS_PATH = "res://maze_levels/"
 
 
@@ -32,107 +31,72 @@ func _run() -> void:
 	var config = MazeConfig.create_default()
 	print("[EditorScript] Config: %d x %d" % [config.maze_width, config.maze_height])
 	
-	# Create the maze node
+	# Create root Maze node (plain Node3D, NO script attached)
+	# This avoids @tool script complications
 	var maze_node = Node3D.new()
 	maze_node.name = "Maze"
 	
-	# Attach maze_generator script
-	var generator_script = load("res://maze_generator.gd")
-	if generator_script == null:
-		push_error("[EditorScript] Failed to load maze_generator.gd!")
+	# Generate maze data directly using MazeAlgorithm
+	print("[EditorScript] Step 1: Generating maze layout...")
+	var algorithm = MazeAlgorithm.new()
+	var cells = algorithm.generate(
+		config.maze_width,
+		config.maze_height,
+		config.entry_position,
+		config.exit_position,
+		config.use_seed,
+		config.random_seed
+	)
+	
+	# Build 3D geometry directly using MazeBuilder
+	print("[EditorScript] Step 2: Building 3D geometry...")
+	var builder = MazeBuilder.new()
+	builder.initialize(config, maze_node)
+	builder.build(cells)
+	
+	# === VERIFICATION ===
+	var floor_container = maze_node.get_node_or_null("FloorTiles")
+	var walls_container = maze_node.get_node_or_null("Walls")
+	
+	if floor_container == null:
+		push_error("[EditorScript] FloorTiles container not created!")
+		maze_node.free()
 		return
 	
-	maze_node.set_script(generator_script)
-	maze_node.config = config
+	if walls_container == null:
+		push_error("[EditorScript] Walls container not created!")
+		maze_node.free()
+		return
 	
-	# Create a temporary scene tree to add the node to
-	# This allows _ready() and generation to work properly
-	var temp_root = Node3D.new()
-	temp_root.name = "TempRoot"
+	var expected_floors = config.maze_width * config.maze_height
+	var actual_floors = floor_container.get_child_count()
+	var actual_walls = walls_container.get_child_count()
 	
-	# Get or create editor scene root
-	var editor_root = EditorInterface.get_edited_scene_root()
-	if editor_root == null:
-		# No scene open - use the current scene tree
-		# EditorScript runs in editor context, so we can use the base control's tree
-		var base_tree = EditorInterface.get_base_control().get_tree()
-		if base_tree != null and base_tree.get_root() != null:
-			base_tree.get_root().add_child(temp_root)
-			temp_root.add_child(maze_node)
-			maze_node.owner = temp_root
-		else:
-			push_error("[EditorScript] Cannot access editor scene tree!")
-			return
-	else:
-		# Scene is open - add to it
-		editor_root.add_child(temp_root)
-		temp_root.add_child(maze_node)
-		maze_node.owner = editor_root
+	if actual_floors != expected_floors:
+		push_error("[EditorScript] Expected %d floors, got %d" % [expected_floors, actual_floors])
+		maze_node.free()
+		return
 	
-	# Wait for _ready() to be called and complete
-	# _ready() will automatically call generate_maze()
-	print("[EditorScript] Waiting for maze node initialization...")
-	for i in range(10):
-		await Engine.get_main_loop().process_frame
+	if actual_walls == 0:
+		push_error("[EditorScript] No walls generated!")
+		maze_node.free()
+		return
 	
-	# Wait for generation to complete (maze_generator._ready() calls generate_maze())
-	# For a 40x40 maze, this can take a while
-	print("[EditorScript] Waiting for maze generation...")
-	var generation_complete = false
-	var wait_count = 0
-	var max_wait = 200  # Increased wait time for large mazes
-	
-	while not generation_complete and wait_count < max_wait:
-		await Engine.get_main_loop().process_frame
-		wait_count += 1
-		
-		# Check if generation is complete by looking for FloorTiles and Walls
-		var floor_tiles = maze_node.get_node_or_null("FloorTiles")
-		var walls = maze_node.get_node_or_null("Walls")
-		
-		if floor_tiles != null and walls != null:
-			var floor_count = floor_tiles.get_child_count()
-			var wall_count = walls.get_child_count()
-			
-			# Generation is complete when we have expected floor tiles
-			var expected_floors = config.maze_width * config.maze_height
-			if floor_count >= expected_floors and floor_count > 0:
-				generation_complete = true
-				print("[EditorScript] Generation complete!")
-				print("[EditorScript]   Floor tiles: %d" % floor_count)
-				print("[EditorScript]   Walls: %d" % wall_count)
-				break
-	
-	if not generation_complete:
-		push_error("[EditorScript] Maze generation timed out or failed!")
-		var floor_tiles = maze_node.get_node_or_null("FloorTiles")
-		var walls = maze_node.get_node_or_null("Walls")
-		if floor_tiles == null or walls == null:
-			push_error("[EditorScript] FloorTiles or Walls nodes not found!")
-			temp_root.queue_free()
-			return
-		else:
-			var floor_count = floor_tiles.get_child_count()
-			var wall_count = walls.get_child_count()
-			print("[EditorScript] Partial generation: %d floors, %d walls" % [floor_count, wall_count])
-			if floor_count == 0:
-				temp_root.queue_free()
-				return
-	
-	# Remove from temporary scene tree
-	temp_root.remove_child(maze_node)
-	temp_root.queue_free()
+	print("[EditorScript] Verification passed!")
+	print("[EditorScript]   Floor tiles: %d" % actual_floors)
+	print("[EditorScript]   Walls: %d" % actual_walls)
 	
 	# Set owners for all nodes (required for packing)
-	# The Maze node will be the root of the saved scene
+	print("[EditorScript] Setting node owners for packing...")
 	_set_owners_recursive(maze_node, maze_node)
 	
 	# Pack the scene
+	print("[EditorScript] Packing scene...")
 	var packed_scene = PackedScene.new()
 	var result = packed_scene.pack(maze_node)
 	if result != OK:
 		push_error("[EditorScript] Failed to pack scene! Error code: %d" % result)
-		maze_node.queue_free()
+		maze_node.free()
 		return
 	
 	# Save the scene
@@ -140,20 +104,19 @@ func _run() -> void:
 	var save_result = ResourceSaver.save(packed_scene, level_path)
 	if save_result != OK:
 		push_error("[EditorScript] Failed to save scene! Error code: %d" % save_result)
-		maze_node.queue_free()
+		maze_node.free()
 		return
 	
 	print("[EditorScript] Scene saved successfully!")
 	print("[EditorScript] Maze level created: %s" % level_path)
 	print("========================================")
 	
-	# Refresh file system
-	EditorInterface.get_resource_filesystem().update_file(level_path)
-	
-	# Clean up
-	maze_node.queue_free()
+	# Clean up - use free() not queue_free() since not in tree
+	maze_node.free()
 	
 	print("\n[EditorScript] Done! New maze level created: %s" % level_name)
+	print("[EditorScript] You can now open %s in the editor." % level_path)
+	print("[EditorScript] If the file doesn't appear, right-click the maze_levels folder and select 'Refresh'.")
 
 
 func _find_next_maze_number() -> int:
@@ -176,7 +139,8 @@ func _find_next_maze_number() -> int:
 	return max_number + 1
 
 
-func _set_owners_recursive(node: Node, owner: Node) -> void:
-	node.owner = owner
+func _set_owners_recursive(node: Node, owner_node: Node) -> void:
+	# Set owner for all children (not the root itself)
 	for child in node.get_children():
-		_set_owners_recursive(child, owner)
+		child.owner = owner_node
+		_set_owners_recursive(child, owner_node)

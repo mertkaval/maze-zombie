@@ -1,6 +1,6 @@
 # maze_builder.gd
-# Constructs the 3D geometry for the maze using prefab scenes
-# Uses floor_tile.tscn and wall_tile.tscn prefabs
+# Constructs the 3D geometry for the maze using direct node creation
+# Avoids PackedScene.instantiate() to prevent editor dialog errors
 
 class_name MazeBuilder
 extends RefCounted
@@ -8,12 +8,19 @@ extends RefCounted
 # Preload for headless mode compatibility
 const MazeConfig = preload("res://maze_config.gd")
 
+# Cached materials (created once, reused for all tiles)
+var _floor_material: StandardMaterial3D
+var _wall_material: StandardMaterial3D
+
+# Configuration
 var _config: MazeConfig
 var _parent_node: Node3D
 
-# Prefab scenes
-var _floor_prefab: PackedScene
-var _wall_prefab: PackedScene
+# Calculated dimensions (from config, no hardcoding)
+var _tile_size: float
+var _wall_height: float
+var _wall_thickness: float
+var _floor_height: float = 0.1
 
 # Statistics for debugging
 var _wall_count: int = 0
@@ -27,26 +34,28 @@ func initialize(config: MazeConfig, parent: Node3D) -> void:
 	_wall_count = 0
 	_floor_count = 0
 	
+	# Cache config values for calculations
+	_tile_size = config.tile_size
+	_wall_height = config.wall_height
+	_wall_thickness = config.wall_thickness
+	
 	print("[MazeBuilder] Initializing builder...")
-	_load_prefabs()
-	print("[MazeBuilder] Builder initialized")
+	_create_materials()
+	print("[MazeBuilder] Builder initialized (direct geometry mode)")
+	print("[MazeBuilder]   Tile size: %.2f" % _tile_size)
+	print("[MazeBuilder]   Wall height: %.2f" % _wall_height)
+	print("[MazeBuilder]   Wall thickness: %.2f" % _wall_thickness)
 
 
-## Loads the prefab scenes
-func _load_prefabs() -> void:
-	# Load floor prefab
-	_floor_prefab = load("res://floor_tile.tscn")
-	if _floor_prefab == null:
-		push_error("[MazeBuilder] Failed to load floor_tile.tscn!")
-		return
+## Creates cached materials for floor and wall tiles
+func _create_materials() -> void:
+	# Create floor material
+	_floor_material = StandardMaterial3D.new()
+	_floor_material.albedo_color = _config.floor_color
 	
-	# Load wall prefab
-	_wall_prefab = load("res://wall_tile.tscn")
-	if _wall_prefab == null:
-		push_error("[MazeBuilder] Failed to load wall_tile.tscn!")
-		return
-	
-	print("[MazeBuilder] Prefabs loaded successfully")
+	# Create wall material
+	_wall_material = StandardMaterial3D.new()
+	_wall_material.albedo_color = _config.wall_color
 
 
 ## Builds the complete maze from cell data
@@ -76,7 +85,6 @@ func _create_floor_tiles(cells: Array) -> void:
 		return
 	
 	var width = cells[0].size()
-	var tile_size = _config.tile_size
 	
 	print("[MazeBuilder] Creating floor tiles for %d x %d grid..." % [width, height])
 	
@@ -88,20 +96,43 @@ func _create_floor_tiles(cells: Array) -> void:
 	# Create one floor tile per cell
 	for y in range(height):
 		for x in range(width):
-			# Calculate tile center position
-			var tile_center_x = (x + 0.5) * tile_size
-			var tile_center_z = (y + 0.5) * tile_size
-			var tile_pos = Vector3(tile_center_x, 0.05, tile_center_z)  # 0.05 to sit on ground
-			
-			# Instantiate floor prefab
-			var floor_instance = _floor_prefab.instantiate()
-			floor_instance.name = "Floor_%d_%d" % [x, y]
-			floor_instance.position = tile_pos
-			
-			floor_container.add_child(floor_instance)
+			var tile = _create_floor_tile(x, y)
+			floor_container.add_child(tile)
 			_floor_count += 1
 	
 	print("[MazeBuilder] Created %d floor tiles" % _floor_count)
+
+
+## Creates a floor tile at the specified cell position
+func _create_floor_tile(x: int, y: int) -> StaticBody3D:
+	var tile = StaticBody3D.new()
+	tile.name = "Floor_%d_%d" % [x, y]
+	
+	# Position at cell center, slightly above origin
+	tile.position = Vector3(
+		(x + 0.5) * _tile_size,
+		_floor_height / 2.0,
+		(y + 0.5) * _tile_size
+	)
+	
+	# Create mesh instance
+	var mesh_instance = MeshInstance3D.new()
+	mesh_instance.name = "MeshInstance3D"
+	var mesh = BoxMesh.new()
+	mesh.size = Vector3(_tile_size, _floor_height, _tile_size)
+	mesh.material = _floor_material
+	mesh_instance.mesh = mesh
+	tile.add_child(mesh_instance)
+	
+	# Create collision shape
+	var collision = CollisionShape3D.new()
+	collision.name = "CollisionShape3D"
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(_tile_size, _floor_height, _tile_size)
+	collision.shape = shape
+	tile.add_child(collision)
+	
+	return tile
 
 
 ## Creates all walls based on cell data
@@ -112,8 +143,6 @@ func _create_walls(cells: Array) -> void:
 		return
 	
 	var width = cells[0].size()
-	var tile_size = _config.tile_size
-	var wall_height = _config.wall_height
 	
 	print("[MazeBuilder] Creating walls for %d x %d grid..." % [width, height])
 	
@@ -127,61 +156,87 @@ func _create_walls(cells: Array) -> void:
 		for x in range(width):
 			var cell = cells[y][x]
 			
-			# Calculate cell center position in world space
-			var cell_center_x = (x + 0.5) * tile_size
-			var cell_center_z = (y + 0.5) * tile_size
-			var wall_y = wall_height / 2.0  # Walls are centered vertically
-			
-			# North wall (at top edge of cell, blocks Z- direction)
-			# This is an East-West oriented wall (runs along X axis)
-			# Place for all cells - outer boundary will be closed
+			# North wall (every cell that has north=true)
+			# Placed at Z = y * tile_size (top edge of cell)
+			# Rotated 90° so wall runs along X axis
 			if cell["north"]:
-				var wall_pos = Vector3(cell_center_x, wall_y, y * tile_size)
-				_place_wall(walls_container, wall_pos, false, "Wall_N_%d_%d" % [x, y])
+				var pos = _get_ns_wall_position(x, y * _tile_size)
+				var wall = _create_wall_tile(pos, 90.0, "Wall_N_%d_%d" % [x, y])
+				walls_container.add_child(wall)
+				_wall_count += 1
 			
-			# South wall (at bottom edge of cell, blocks Z+ direction)
-			# Only place south walls for the last row to avoid duplicates
-			# This ensures outer boundary is closed
-			# This is an East-West oriented wall
+			# South wall (only bottom row to avoid duplicates)
+			# Placed at Z = (y + 1) * tile_size (bottom edge of last row)
+			# Rotated 90° so wall runs along X axis
 			if y == height - 1 and cell["south"]:
-				var wall_pos = Vector3(cell_center_x, wall_y, (y + 1) * tile_size)
-				_place_wall(walls_container, wall_pos, false, "Wall_S_%d_%d" % [x, y])
+				var pos = _get_ns_wall_position(x, (y + 1) * _tile_size)
+				var wall = _create_wall_tile(pos, 90.0, "Wall_S_%d_%d" % [x, y])
+				walls_container.add_child(wall)
+				_wall_count += 1
 			
-			# West wall (at left edge of cell, blocks X- direction)
-			# This is a North-South oriented wall (runs along Z axis)
-			# Place for all cells - outer boundary will be closed
-			# For first column (x=0), this creates the west boundary
+			# West wall (every cell that has west=true)
+			# Placed at X = x * tile_size (left edge of cell)
+			# No rotation - wall runs along Z axis
 			if cell["west"]:
-				var wall_pos = Vector3(x * tile_size, wall_y, cell_center_z)
-				_place_wall(walls_container, wall_pos, true, "Wall_W_%d_%d" % [x, y])
+				var pos = _get_ew_wall_position(x * _tile_size, y)
+				var wall = _create_wall_tile(pos, 0.0, "Wall_W_%d_%d" % [x, y])
+				walls_container.add_child(wall)
+				_wall_count += 1
 			
-			# East wall (at right edge of cell, blocks X+ direction)
-			# Only place east walls for the last column to avoid duplicates
-			# This ensures outer boundary is closed
-			# This is a North-South oriented wall
+			# East wall (only right column to avoid duplicates)
+			# Placed at X = (x + 1) * tile_size (right edge of last column)
+			# No rotation - wall runs along Z axis
 			if x == width - 1 and cell["east"]:
-				var wall_pos = Vector3((x + 1) * tile_size, wall_y, cell_center_z)
-				_place_wall(walls_container, wall_pos, true, "Wall_E_%d_%d" % [x, y])
+				var pos = _get_ew_wall_position((x + 1) * _tile_size, y)
+				var wall = _create_wall_tile(pos, 0.0, "Wall_E_%d_%d" % [x, y])
+				walls_container.add_child(wall)
+				_wall_count += 1
 
 
-## Places a single wall at the given position
-## Parameters:
-##   parent: Parent node to add wall to
-##   position: World position for the wall
-##   rotate_90: If true, rotate 90 degrees around Y axis (for N-S walls)
-##   wall_name: Name for the wall instance
-func _place_wall(parent: Node3D, position: Vector3, rotate_90: bool, wall_name: String) -> void:
-	# Instantiate wall prefab
-	var wall_instance = _wall_prefab.instantiate()
-	wall_instance.name = wall_name
-	wall_instance.position = position
+## Calculates position for North/South walls (run along X axis, block Z movement)
+func _get_ns_wall_position(cell_x: int, edge_z: float) -> Vector3:
+	return Vector3(
+		(cell_x + 0.5) * _tile_size,          # Center of cell X
+		_floor_height + _wall_height / 2.0,   # Sit on floor (floor top + half wall height)
+		edge_z                                 # At the edge (north or south)
+	)
+
+
+## Calculates position for East/West walls (run along Z axis, block X movement)
+func _get_ew_wall_position(edge_x: float, cell_y: int) -> Vector3:
+	return Vector3(
+		edge_x,                               # At the edge (east or west)
+		_floor_height + _wall_height / 2.0,   # Sit on floor (floor top + half wall height)
+		(cell_y + 0.5) * _tile_size           # Center of cell Z
+	)
+
+
+## Creates a wall tile at the specified position with rotation
+func _create_wall_tile(pos: Vector3, rotation_y: float, wall_name: String) -> StaticBody3D:
+	var wall = StaticBody3D.new()
+	wall.name = wall_name
+	wall.position = pos
+	wall.rotation_degrees.y = rotation_y
 	
-	# Rotate if needed (for N-S walls, rotate 90 degrees around Y)
-	if rotate_90:
-		wall_instance.rotation_degrees.y = 90.0
+	# Create mesh instance
+	var mesh_instance = MeshInstance3D.new()
+	mesh_instance.name = "MeshInstance3D"
+	var mesh = BoxMesh.new()
+	# Size: thickness x height x length (tile_size)
+	mesh.size = Vector3(_wall_thickness, _wall_height, _tile_size)
+	mesh.material = _wall_material
+	mesh_instance.mesh = mesh
+	wall.add_child(mesh_instance)
 	
-	parent.add_child(wall_instance)
-	_wall_count += 1
+	# Create collision shape
+	var collision = CollisionShape3D.new()
+	collision.name = "CollisionShape3D"
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(_wall_thickness, _wall_height, _tile_size)
+	collision.shape = shape
+	wall.add_child(collision)
+	
+	return wall
 
 
 ## Returns the number of walls created

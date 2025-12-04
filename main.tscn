@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://bg0yiy6tpx1h0"]
 
-[ext_resource type="PackedScene" path="res://player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://dh64raf4wfqgs" path="res://player.tscn" id="2_player"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSky_1"]
 sky_top_color = Color(0.3, 0.5, 0.8, 1)
@@ -21,7 +21,7 @@ ambient_light_energy = 0.3
 [node name="Main" type="Node3D"]
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.22622624, 0.9740748, 0, -0.9740748, 0.22622624, -1356.8049, -142.55708, 1226.4927)
+transform = Transform3D(1, 0, 0, 0, 0.22622624, 0.9740748, 0, -0.9740748, 0.22622624, -25.0066, 21.075851, 49.356995)
 light_color = Color(1, 0.98, 0.95, 1)
 shadow_enabled = true
 directional_shadow_mode = 1
@@ -30,4 +30,4 @@ directional_shadow_mode = 1
 environment = SubResource("Environment_1")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.31348395, 3.6945667)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
