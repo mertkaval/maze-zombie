@@ -16,10 +16,9 @@ func _ready() -> void:
 const SCENES_TO_TEST = {
 		# "maze.tscn": {  # Removed - using maze_levels/ instead
 		"maze_levels": {
-		"required_nodes": ["Maze"],
-		"required_script": "maze_generator.gd",
-		"node_type": "Node3D"
-	},
+			"is_directory": true,
+			"description": "Directory containing generated maze scenes"
+		},
 	"main.tscn": {
 		"required_nodes": ["Main", "Sun", "WorldEnvironment", "Maze", "Player"],
 		"node_type": "Node3D"
