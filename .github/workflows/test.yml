@@ -44,7 +44,7 @@ jobs:
       - name: Run Individual Tests (for detailed logs)
         run: |
           echo "Running individual tests for detailed output..."
-          ./godot --headless --path . test_runner.tscn 2>&1 | tee validation_output.txt || true
+          ./godot --headless --path . --script scripts/test_scene_validation.gd 2>&1 | tee validation_output.txt || true
         continue-on-error: true
       
       - name: Test Maze Boundaries
@@ -140,7 +140,7 @@ jobs:
             fi
           fi
           
-          # Check validation_output.txt (from test_runner.tscn)
+          # Check validation_output.txt (from test_scene_validation.gd)
           if [ -f validation_output.txt ]; then
             if grep -q "PASSED" validation_output.txt 2>/dev/null; then
               has_passed=true
