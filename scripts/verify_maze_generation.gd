@@ -9,14 +9,36 @@ func _initialize() -> void:
 	print("  Maze Generation Verification")
 	print("========================================")
 	
-	# Load maze scene
-	var maze_scene = load("res://maze.tscn") as PackedScene
-	if maze_scene == null:
-		print("ERROR: Failed to load maze.tscn")
+	# Load first available maze scene from maze_levels
+	var maze_levels_dir = DirAccess.open("res://maze_levels")
+	if maze_levels_dir == null:
+		print("ERROR: maze_levels directory not found")
 		quit(1)
 		return
 	
-	print("✓ Maze scene loaded")
+	# Find first .tscn file
+	var maze_scene_path = null
+	maze_levels_dir.list_dir_begin()
+	var file_name = maze_levels_dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tscn"):
+			maze_scene_path = "res://maze_levels/" + file_name
+			break
+		file_name = maze_levels_dir.get_next()
+	
+	if maze_scene_path == null:
+		print("ERROR: No maze scene found in maze_levels/")
+		print("Run generate_maze_level.gd first to create a maze scene")
+		quit(1)
+		return
+	
+	var maze_scene = load(maze_scene_path) as PackedScene
+	if maze_scene == null:
+		print("ERROR: Failed to load maze scene: %s" % maze_scene_path)
+		quit(1)
+		return
+	
+	print("✓ Maze scene loaded: %s" % maze_scene_path)
 	
 	# Instantiate maze
 	var maze_instance = maze_scene.instantiate()
