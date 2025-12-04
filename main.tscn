@@ -1,5 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://bg0yiy6tpx1h0"]
+[gd_scene load_steps=6 format=3 uid="uid://bg0yiy6tpx1h0"]
 
+[ext_resource type="PackedScene" uid="uid://dmwt0n72lfcrc" path="res://maze_levels/maze_01.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://dh64raf4wfqgs" path="res://player.tscn" id="2_player"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSky_1"]
@@ -21,13 +22,14 @@ ambient_light_energy = 0.3
 [node name="Main" type="Node3D"]
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.22622624, 0.9740748, 0, -0.9740748, 0.22622624, -25.0066, 21.075851, 49.356995)
+transform = Transform3D(-0.87421954, -0.41452977, 0.252795, 0.21741605, 0.13131806, 0.96720517, -0.4341319, 0.9005113, -0.024675399, 19.380669, 21.219233, 20.274418)
 light_color = Color(1, 0.98, 0.95, 1)
-shadow_enabled = true
 directional_shadow_mode = 1
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_1")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 2, 1.5001783)
+
+[node name="Maze" parent="." instance=ExtResource("2_0xm2m")]
