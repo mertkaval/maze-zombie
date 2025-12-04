@@ -1,6 +1,8 @@
 # maze_scene_helper.gd
 # Helper functions for finding maze scenes in maze_levels folder
 
+class_name MazeSceneHelper
+
 static func find_first_maze_scene() -> String:
 	"""Returns path to first .tscn file in maze_levels/, or empty string if none found"""
 	var maze_levels_dir = DirAccess.open("res://maze_levels")
