@@ -62,16 +62,20 @@ func test_load_maze_scene() -> void:
 	test_count += 1
 	print("\n[Test %d] Loading maze scene..." % test_count)
 	
+	if MAZE_SCENE_PATH == "":
+		record_error("No maze scene found in maze_levels/ - run generate_maze_level.gd first")
+		return
+	
 	if not ResourceLoader.exists(MAZE_SCENE_PATH):
 		record_error("Maze scene file does not exist: %s" % MAZE_SCENE_PATH)
 		return
 	
 	var scene = load(MAZE_SCENE_PATH) as PackedScene
 	if scene == null:
-		record_error("Failed to load maze scene")
+		record_error("Failed to load maze scene: %s" % MAZE_SCENE_PATH)
 		return
 	
-	print("  ✓ Maze scene loaded successfully")
+	print("  ✓ Maze scene loaded successfully: %s" % MAZE_SCENE_PATH)
 
 
 func test_generate_maze() -> void:
