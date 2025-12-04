@@ -24,6 +24,15 @@ func run_tests() -> void:
 	error_count = 0
 	test_count = 0
 	
+	# Find first maze scene
+	MAZE_SCENE_PATH = MazeSceneHelper.find_first_maze_scene()
+	if MAZE_SCENE_PATH == "":
+		record_error("No maze scene found in maze_levels/ - run generate_maze_level.gd first")
+		finish_test()
+		return
+	
+	print("Using maze scene: %s" % MAZE_SCENE_PATH)
+	
 	# Test 1: Load main scene
 	test_load_main_scene()
 	
