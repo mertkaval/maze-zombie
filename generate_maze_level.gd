@@ -7,8 +7,7 @@
 @tool
 extends EditorScript
 
-const MazeConfig = preload("res://maze_config.gd")
-
+# MazeConfig is a class_name, no need to preload
 const MAZE_LEVELS_PATH = "res://maze_levels/"
 
 
