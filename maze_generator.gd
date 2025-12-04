@@ -3,8 +3,8 @@
 # Attach this script to a Node3D in your scene
 # @tool annotation allows this to run in the editor
 #
-# NOTE: This script automatically generates the maze when maze.tscn is opened.
-#       Simply open maze.tscn in the editor to see the generated maze.
+# NOTE: This script automatically generates the maze when attached to a scene node.
+#       It's used by generate_maze_level.gd to create maze scenes dynamically.
 #       The maze generates automatically via _ready() function.
 
 @tool

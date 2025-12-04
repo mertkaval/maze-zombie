@@ -6,7 +6,8 @@ extends SceneTree
 
 var error_count = 0
 
-const MAZE_SCENE_PATH = "res://maze.tscn"
+# Will find first maze scene from maze_levels/
+var MAZE_SCENE_PATH = ""
 
 func _initialize() -> void:
 	run_tests()
@@ -18,10 +19,30 @@ func run_tests() -> void:
 	
 	error_count = 0
 	
+	# Find first maze scene in maze_levels
+	var maze_levels_dir = DirAccess.open("res://maze_levels")
+	if maze_levels_dir == null:
+		record_error("maze_levels directory not found - run generate_maze_level.gd first")
+		finish_test()
+		return
+	
+	maze_levels_dir.list_dir_begin()
+	var file_name = maze_levels_dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tscn"):
+			MAZE_SCENE_PATH = "res://maze_levels/" + file_name
+			break
+		file_name = maze_levels_dir.get_next()
+	
+	if MAZE_SCENE_PATH == "":
+		record_error("No maze scene found in maze_levels/ - run generate_maze_level.gd first")
+		finish_test()
+		return
+	
 	# Load and instantiate maze
 	var maze_scene = load(MAZE_SCENE_PATH) as PackedScene
 	if maze_scene == null:
-		record_error("Failed to load maze scene")
+		record_error("Failed to load maze scene: %s" % MAZE_SCENE_PATH)
 		finish_test()
 		return
 	

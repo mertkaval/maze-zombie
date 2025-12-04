@@ -8,7 +8,8 @@ var error_count = 0
 var test_count = 0
 
 const MAIN_SCENE_PATH = "res://main.tscn"
-const MAZE_SCENE_PATH = "res://maze.tscn"
+# Will find first maze scene from maze_levels/
+var MAZE_SCENE_PATH = ""
 const PLAYER_SCENE_PATH = "res://player.tscn"
 
 func _ready() -> void:

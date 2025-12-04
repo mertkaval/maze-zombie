@@ -9,7 +9,7 @@ var error_count = 0
 var warning_count = 0
 
 const SCENES_TO_ANALYZE = [
-	"res://maze.tscn",
+		# maze.tscn removed - using maze_levels/ instead
 	"res://main.tscn",
 	"res://player.tscn",
 	"res://floor_tile.tscn",
