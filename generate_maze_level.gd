@@ -2,6 +2,7 @@
 # EditorScript to generate new maze scenes dynamically
 # Run this script from: Tools > Run Script
 # Each run creates a new maze scene in maze_levels/ folder
+# Naming: maze_01.tscn, maze_02.tscn, maze_03.tscn, etc.
 
 @tool
 extends EditorScript
@@ -13,9 +14,6 @@ const MazeBuilder = preload("res://maze_builder.gd")
 
 ## Base path for maze levels
 const MAZE_LEVELS_PATH = "res://maze_levels/"
-
-## Maze scene template path (we'll create nodes programmatically)
-var maze_scene_template = null
 
 
 func _run() -> void:
@@ -52,18 +50,20 @@ func _run() -> void:
 	maze_node.set_script(generator_script)
 	maze_node.config = config
 	
-	# Create scene tree
-	var scene_root = Node3D.new()
-	scene_root.name = "MazeLevel"
-	scene_root.add_child(maze_node)
-	maze_node.owner = scene_root
+	# Add to editor scene tree temporarily so generation can work
+	# EditorScript needs nodes in scene tree for proper execution
+	var temp_parent = Node3D.new()
+	temp_parent.name = "TempMazeParent"
+	EditorInterface.get_edited_scene_root().add_child(temp_parent)
+	temp_parent.add_child(maze_node)
+	maze_node.owner = temp_parent
 	
 	# Generate the maze synchronously
 	print("[EditorScript] Generating maze...")
 	maze_node.generate_maze()
 	
-	# Wait for generation to complete
-	for i in range(30):
+	# Wait for generation to complete (process frames)
+	for i in range(50):
 		await Engine.get_main_loop().process_frame
 	
 	# Verify generation worked
@@ -72,6 +72,7 @@ func _run() -> void:
 	
 	if floor_tiles == null or walls == null:
 		push_error("[EditorScript] Maze generation failed - nodes not found!")
+		temp_parent.queue_free()
 		return
 	
 	var floor_count = floor_tiles.get_child_count()
@@ -83,16 +84,23 @@ func _run() -> void:
 	
 	if floor_count == 0:
 		push_error("[EditorScript] No floor tiles generated!")
+		temp_parent.queue_free()
 		return
 	
+	# Remove from temporary parent
+	temp_parent.remove_child(maze_node)
+	temp_parent.queue_free()
+	
 	# Set owners for all nodes (required for packing)
-	_set_owners_recursive(scene_root, scene_root)
+	# The Maze node will be the root of the saved scene
+	_set_owners_recursive(maze_node, maze_node)
 	
 	# Pack the scene
 	var packed_scene = PackedScene.new()
-	var result = packed_scene.pack(scene_root)
+	var result = packed_scene.pack(maze_node)
 	if result != OK:
 		push_error("[EditorScript] Failed to pack scene! Error code: %d" % result)
+		maze_node.queue_free()
 		return
 	
 	# Save the scene
@@ -100,6 +108,7 @@ func _run() -> void:
 	var save_result = ResourceSaver.save(packed_scene, level_path)
 	if save_result != OK:
 		push_error("[EditorScript] Failed to save scene! Error code: %d" % save_result)
+		maze_node.queue_free()
 		return
 	
 	print("[EditorScript] Scene saved successfully!")
@@ -109,7 +118,10 @@ func _run() -> void:
 	# Refresh file system
 	EditorInterface.get_resource_filesystem().update_file(level_path)
 	
-	print("\n[EditorScript] Done! New maze level created in maze_levels/ folder.")
+	# Clean up
+	maze_node.queue_free()
+	
+	print("\n[EditorScript] Done! New maze level created: %s" % level_name)
 
 
 func _find_next_maze_number() -> int:
@@ -124,7 +136,7 @@ func _find_next_maze_number() -> int:
 	
 	while file_name != "":
 		if file_name.begins_with("maze_") and file_name.ends_with(".tscn"):
-			# Extract number from filename (maze_01.tscn -> 01)
+			# Extract number from filename (maze_01.tscn -> 1)
 			var number_str = file_name.trim_prefix("maze_").trim_suffix(".tscn")
 			var number = number_str.to_int()
 			if number > max_number:

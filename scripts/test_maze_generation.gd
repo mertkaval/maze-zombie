@@ -7,7 +7,8 @@ extends Node
 var error_count = 0
 var test_count = 0
 
-const MAZE_SCENE_PATH = "res://maze.tscn"
+# Will find first maze scene from maze_levels/
+var MAZE_SCENE_PATH = ""
 const EXPECTED_FLOOR_COUNT = 40 * 40  # 40x40 tiles
 
 func _ready() -> void:
