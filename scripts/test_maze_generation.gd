@@ -4,6 +4,8 @@
 
 extends Node
 
+const MazeSceneHelper = preload("res://scripts/maze_scene_helper.gd")
+
 var error_count = 0
 var test_count = 0
 
@@ -27,7 +29,14 @@ func run_tests() -> void:
 	MAZE_SCENE_PATH = MazeSceneHelper.find_first_maze_scene()
 	if MAZE_SCENE_PATH == "":
 		record_error("No maze scene found in maze_levels/ - run generate_maze_level.gd first")
-		finish_test()
+		# Print summary and exit early
+		print("\n========================================")
+		print("  Test Summary")
+		print("========================================")
+		print("Tests run: %d" % test_count)
+		print("Errors: %d" % error_count)
+		print("❌ Maze generation tests FAILED - no maze scene found")
+		print("FAILED")
 		return
 	
 	print("Using maze scene: %s" % MAZE_SCENE_PATH)
