@@ -79,4 +79,3 @@ func run_test_script(test_name: String, script_path: String) -> void:
 	
 	# Clean up
 	test_node.queue_free()
-
